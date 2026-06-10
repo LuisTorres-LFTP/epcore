@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Formulario Proveedor - EPCORE</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+
+<div class="container">
+
+    <h1 th:text="${proveedor.idProveedor != null} ? 'Editar proveedor' : 'Registrar proveedor'">
+        Registrar proveedor
+    </h1>
+
+    <p class="subtitle">Formulario de registro inicial para evaluación de proveedores.</p>
+
+    <form th:action="@{/proveedores/guardar}"
+          th:object="${proveedor}"
+          method="post">
+
+        <input type="hidden" th:field="*{idProveedor}">
+        <input type="hidden" th:field="*{estado}">
+        <input type="hidden" th:field="*{fechaCreacion}">
+
+        <label>Tipo de persona</label>
+        <select th:field="*{tipoPersona}" required>
+            <option value="">Seleccione...</option>
+            <option value="NATURAL">Natural</option>
+            <option value="JURIDICA">Jurídica</option>
+        </select>
+
+        <label>NIT / Identificación</label>
+        <input type="text" th:field="*{nit}" required>
+
+        <label>Razón social</label>
+        <input type="text" th:field="*{razonSocial}" required>
+
+        <label>Nombre comercial</label>
+        <input type="text" th:field="*{nombreComercial}">
+
+        <label>Representante legal</label>
+        <input type="text" th:field="*{representanteLegal}">
+
+        <label>Correo</label>
+        <input type="email" th:field="*{correo}" required>
+
+        <label>Teléfono</label>
+        <input type="text" th:field="*{telefono}">
+
+        <label>Dirección</label>
+        <input type="text" th:field="*{direccion}">
+
+        <label>Ciudad</label>
+        <input type="text" th:field="*{ciudad}">
+
+        <label>Departamento</label>
+        <input type="text" th:field="*{departamento}">
+
+        <label>País</label>
+        <input type="text" th:field="*{pais}">
+
+        <label>Sector económico</label>
+        <input type="text" th:field="*{sectorEconomico}">
+
+        <label>Actividad económica</label>
+        <input type="text" th:field="*{actividadEconomica}">
+
+        <label>Tamaño de empresa</label>
+        <select th:field="*{tamanoEmpresa}">
+            <option value="">Seleccione...</option>
+            <option value="Microempresa">Microempresa</option>
+            <option value="Pequeña">Pequeña</option>
+            <option value="Mediana">Mediana</option>
+            <option value="Grande">Grande</option>
+        </select>
+
+        <label class="checkbox-label">
+            <input type="checkbox" th:field="*{autorizacionDatos}">
+            Autoriza el tratamiento de datos personales
+        </label>
+
+        <button type="submit">Guardar proveedor</button>
+
+        <a th:href="@{/proveedores}" class="link">Cancelar</a>
+
+    </form>
+</div>
+
+</body>
+</html>

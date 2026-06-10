@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Formulario Usuario - EPCORE</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+
+<div class="container">
+
+    <h1 th:text="${usuario.idUsuario == null} ? 'Registrar usuario' : 'Editar usuario'">
+        Registrar usuario
+    </h1>
+
+    <p class="subtitle">Gestión de usuarios y roles del sistema.</p>
+
+    <form th:action="@{/usuarios/guardar}" th:object="${usuario}" method="post">
+
+        <input type="hidden" th:field="*{idUsuario}">
+
+        <label for="nombre">Nombre</label>
+        <input type="text" id="nombre" th:field="*{nombre}" required>
+
+        <label for="correo">Correo</label>
+        <input type="email" id="correo" th:field="*{correo}" required>
+
+        <label for="password">Contraseña</label>
+        <input type="password" id="password" th:field="*{password}" required>
+
+        <label for="rol">Rol</label>
+        <select id="rol" th:field="*{rol}" required>
+            <option value="">Seleccione un rol</option>
+            <option value="ADMIN">ADMIN</option>
+            <option value="ANALISTA_COMPRAS">ANALISTA_COMPRAS</option>
+            <option value="AUDITOR">AUDITOR</option>
+            <option value="GERENTE">GERENTE</option>
+        </select>
+
+        <br><br>
+
+        <label>
+            <input type="checkbox" th:field="*{activo}">
+            Activo
+        </label>
+
+        <br><br>
+
+        <button type="submit">Guardar usuario</button>
+
+        <a th:href="@{/usuarios}" class="link" style="margin-left:20px;">
+            Cancelar
+        </a>
+
+    </form>
+
+</div>
+
+</body>
+</html>

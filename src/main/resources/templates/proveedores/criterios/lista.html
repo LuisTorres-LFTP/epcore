@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Criterios - EPCORE</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+
+<div class="container">
+    <h1>Criterios registrados</h1>
+    <p class="subtitle">Gestión de criterios de evaluación para proveedores.</p>
+
+    <span sec:authorize="hasRole('ADMIN')">
+        <a th:href="@{/criterios/nuevo}" class="link">+ Registrar criterio</a>
+        &nbsp; | &nbsp;
+    </span>
+
+    <a th:href="@{/proveedores}" class="link">Ver proveedores</a>
+    &nbsp; | &nbsp;
+    <span sec:authorize="hasRole('ADMIN')">
+    &nbsp; | &nbsp;
+    <a th:href="@{/usuarios}" class="link">Ver usuarios</a>
+    </span>
+
+    <table>
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Descripción</th>
+            <th>Peso</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        <tr th:each="criterio : ${criterios}">
+            <td th:text="${criterio.idCriterio}"></td>
+            <td th:text="${criterio.nombreCriterio}"></td>
+            <td th:text="${criterio.descripcion}"></td>
+            <td th:text="${criterio.peso}"></td>
+            <td>
+                <span class="badge" th:text="${criterio.activo} ? 'ACTIVO' : 'INACTIVO'"></span>
+            </td>
+            <td>
+                <span sec:authorize="hasRole('ADMIN')">
+                    <a th:href="@{/criterios/editar/{id}(id=${criterio.idCriterio})}" class="link">Editar</a>
+                    |
+                    <a th:href="@{/criterios/eliminar/{id}(id=${criterio.idCriterio})}"
+                       class="link"
+                       onclick="return confirm('¿Está seguro de eliminar este criterio?');">
+                        Eliminar
+                    </a>
+                </span>
+
+                <span sec:authorize="!hasRole('ADMIN')">
+                    Solo consulta
+                </span>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+</body>
+</html>
