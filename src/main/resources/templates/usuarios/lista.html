@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Usuarios - EPCORE</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+
+<div class="container">
+    <h1>Usuarios registrados</h1>
+    <p class="subtitle">Gestión de usuarios y roles del sistema.</p>
+
+    <a th:href="@{/usuarios/nuevo}" class="link">+ Registrar usuario</a>
+    &nbsp; | &nbsp;
+    <a th:href="@{/proveedores}" class="link">Ver proveedores</a>
+    &nbsp; | &nbsp;
+    <a th:href="@{/criterios}" class="link">Ver criterios</a>
+    &nbsp; | &nbsp;
+    <a th:href="@{/evaluaciones}" class="link">Ver evaluaciones</a>
+
+    <table>
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Correo</th>
+            <th>Rol</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        <tr th:each="usuario : ${usuarios}">
+            <td th:text="${usuario.idUsuario}"></td>
+            <td th:text="${usuario.nombre}"></td>
+            <td th:text="${usuario.correo}"></td>
+            <td th:text="${usuario.rol}"></td>
+            <td>
+                <span class="badge"
+                      th:text="${usuario.activo} ? 'ACTIVO' : 'INACTIVO'"></span>
+            </td>
+            <td>
+                <a th:href="@{/usuarios/editar/{id}(id=${usuario.idUsuario})}" class="link">Editar</a>
+
+                <span th:if="${usuario.activo}">
+                    &nbsp; | &nbsp;
+                    <a th:href="@{/usuarios/inactivar/{id}(id=${usuario.idUsuario})}"
+                       class="link"
+                       onclick="return confirm('¿Está seguro de inactivar este usuario?');">
+                        Inactivar
+                    </a>
+                </span>
+
+                <span th:if="${!usuario.activo}">
+                    &nbsp; | &nbsp;
+                    <a th:href="@{/usuarios/activar/{id}(id=${usuario.idUsuario})}"
+                       class="link"
+                       onclick="return confirm('¿Está seguro de activar este usuario?');">
+                        Activar
+                    </a>
+                </span>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+</body>
+</html>

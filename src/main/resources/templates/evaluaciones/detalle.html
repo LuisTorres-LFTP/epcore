@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Detalle Evaluación - EPCORE</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+
+<div class="container">
+
+    <h1>Detalle de evaluación</h1>
+    <p class="subtitle">Resultado detallado por criterio evaluado.</p>
+
+    <p><strong>Proveedor:</strong> <span th:text="${evaluacion.proveedor.razonSocial}"></span></p>
+    <p><strong>Fecha:</strong> <span th:text="${evaluacion.fechaEvaluacion}"></span></p>
+    <p><strong>Resultado final:</strong> <span th:text="${evaluacion.resultadoFinal}"></span></p>
+
+    <p>
+        <strong>Estado:</strong>
+        <span class="badge" th:text="${evaluacion.activo} ? 'ACTIVA' : 'INACTIVA'"></span>
+    </p>
+
+    <br>
+
+    <div th:if="${#lists.isEmpty(detalles)}">
+        <p class="subtitle">
+            Esta evaluación no tiene criterios detallados registrados. Probablemente fue creada antes de implementar el detalle por criterios.
+        </p>
+    </div>
+
+    <table th:if="${!#lists.isEmpty(detalles)}">
+        <thead>
+        <tr>
+            <th>Criterio</th>
+            <th>Descripción</th>
+            <th>Calificación</th>
+            <th>Peso</th>
+            <th>Resultado ponderado</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        <tr th:each="detalle : ${detalles}">
+            <td th:text="${detalle.criterio.nombreCriterio}"></td>
+            <td th:text="${detalle.criterio.descripcion}"></td>
+            <td th:text="${detalle.calificacion}"></td>
+            <td th:text="${detalle.peso + '%'}"></td>
+            <td th:text="${detalle.resultadoPonderado}"></td>
+        </tr>
+        </tbody>
+    </table>
+
+    <br>
+
+    <a th:href="@{/evaluaciones}" class="link">Volver a evaluaciones</a>
+
+</div>
+
+</body>
+</html>

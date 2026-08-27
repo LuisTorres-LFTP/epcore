@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Proveedores - EPCORE</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+
+<div class="container">
+    <h1>Proveedores registrados</h1>
+    <p class="subtitle">Gestión inicial de proveedores para evaluación empresarial.</p>
+
+    <span sec:authorize="hasAnyRole('ADMIN', 'ANALISTA_COMPRAS')">
+        <a th:href="@{/proveedores/nuevo}" class="link">+ Registrar proveedor</a>
+        &nbsp; | &nbsp;
+    </span>
+
+    <a th:href="@{/criterios}" class="link">Ver criterios</a>
+
+    <span sec:authorize="hasRole('ADMIN')">
+        &nbsp; | &nbsp;
+        <a th:href="@{/usuarios}" class="link">Ver usuarios</a>
+    </span>
+
+    <br><br>
+
+    <table>
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>NIT</th>
+            <th>Razón social</th>
+            <th>Correo</th>
+            <th>Ciudad</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        <tr th:each="proveedor : ${proveedores}">
+            <td th:text="${proveedor.idProveedor}"></td>
+            <td th:text="${proveedor.nit}"></td>
+            <td th:text="${proveedor.razonSocial}"></td>
+            <td th:text="${proveedor.correo}"></td>
+            <td th:text="${proveedor.ciudad}"></td>
+            <td>
+                <span class="badge" th:text="${proveedor.estado}"></span>
+            </td>
+            <td>
+                <span sec:authorize="hasAnyRole('ADMIN', 'ANALISTA_COMPRAS')">
+                    <a th:href="@{/proveedores/editar/{idProveedor}(idProveedor=${proveedor.idProveedor})}" class="link">Editar</a>
+                </span>
+
+                <span sec:authorize="hasRole('ADMIN')">
+                    &nbsp; | &nbsp;
+                    <a th:href="@{/proveedores/eliminar/{idProveedor}(idProveedor=${proveedor.idProveedor})}"
+                       class="link"
+                       onclick="return confirm('¿Está seguro de eliminar este proveedor?');">
+                        Eliminar
+                    </a>
+                </span>
+
+                <span sec:authorize="hasAnyRole('GERENTE', 'AUDITOR')">
+                    Solo consulta
+                </span>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+</body>
+</html>

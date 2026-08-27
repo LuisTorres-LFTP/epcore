@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Formulario Criterio - EPCORE</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1 th:text="${criterio.idCriterio != null} ? 'Editar criterio' : 'Registrar criterio'">
+        Registrar criterio
+    </h1>
+
+    <p class="subtitle">
+        Gestión de criterios de evaluación para proveedores.
+    </p>
+
+    <form th:action="@{/criterios/guardar}"
+          th:object="${criterio}"
+          method="post">
+
+        <!-- ID oculto para edición -->
+        <input type="hidden" th:field="*{idCriterio}">
+
+        <label for="nombreCriterio">Nombre del criterio</label>
+        <input type="text"
+               id="nombreCriterio"
+               th:field="*{nombreCriterio}"
+               required>
+
+        <label for="descripcion">Descripción</label>
+        <textarea id="descripcion"
+                  th:field="*{descripcion}"
+                  rows="4">
+        </textarea>
+
+        <label for="peso">Peso</label>
+        <input type="number"
+               id="peso"
+               th:field="*{peso}"
+               min="1"
+               max="100"
+               required>
+
+        <div style="margin-top: 20px;">
+            <label>
+                <input type="checkbox"
+                       th:field="*{activo}">
+                Activo
+            </label>
+        </div>
+
+        <div style="margin-top: 30px;">
+            <button type="submit">
+                Guardar criterio
+            </button>
+
+            <a th:href="@{/criterios}"
+               class="link"
+               style="margin-left: 15px;">
+                Cancelar
+            </a>
+        </div>
+
+    </form>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Formulario Evaluación - EPCORE</title>
+
+    <link rel="stylesheet"
+          th:href="@{/css/styles.css}">
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Registrar evaluación</h1>
+
+    <p class="subtitle">
+        Gestión de evaluaciones de proveedores.
+    </p>
+
+    <form th:action="@{/evaluaciones/guardar}"
+          th:object="${evaluacion}"
+          method="post">
+
+        <!-- PROVEEDOR -->
+        <label for="proveedor">
+            Proveedor
+        </label>
+
+        <select id="proveedor"
+                th:field="*{proveedor}"
+                required>
+
+            <option value="">
+                Seleccione un proveedor
+            </option>
+
+            <option th:each="proveedor : ${proveedores}"
+                    th:value="${proveedor.idProveedor}"
+                    th:text="${proveedor.razonSocial}">
+            </option>
+
+        </select>
+
+        <br><br>
+
+        <!-- FECHA -->
+        <label for="fechaEvaluacion">
+            Fecha de evaluación
+        </label>
+
+        <input type="date"
+               id="fechaEvaluacion"
+               th:field="*{fechaEvaluacion}"
+               required>
+
+        <br><br>
+
+        <!-- CRITERIOS -->
+        <h3>Calificación por criterios</h3>
+
+        <table>
+
+            <thead>
+            <tr>
+                <th>Criterio</th>
+                <th>Descripción</th>
+                <th>Peso</th>
+                <th>Calificación (0 - 100)</th>
+            </tr>
+            </thead>
+
+            <tbody>
+
+            <tr th:each="criterio : ${criterios}">
+
+                <td th:text="${criterio.nombreCriterio}">
+                </td>
+
+                <td th:text="${criterio.descripcion}">
+                </td>
+
+                <td>
+                    <span th:text="${criterio.peso}">
+                    </span>%
+                </td>
+
+                <td>
+
+                    <input type="number"
+                           min="0"
+                           max="100"
+                           step="0.1"
+                           required
+                           th:name="${'calificacion_' + criterio.idCriterio}"
+                           placeholder="Ingrese nota">
+
+                </td>
+
+            </tr>
+
+            </tbody>
+
+        </table>
+
+        <br>
+
+        <!-- ESTADO -->
+        <div style="margin-top: 10px;">
+
+            <input type="checkbox"
+                   th:field="*{activo}"
+                   checked>
+
+            <label>
+                Activa
+            </label>
+
+        </div>
+
+        <br>
+
+        <!-- BOTONES -->
+        <button type="submit">
+            Guardar evaluación
+        </button>
+
+        <a th:href="@{/evaluaciones}"
+           class="link"
+           style="margin-left:20px;">
+
+            Cancelar
+
+        </a>
+
+    </form>
+
+</div>
+
+</body>
+</html>

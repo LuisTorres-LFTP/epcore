@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Evaluaciones - EPCORE</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Evaluaciones registradas</h1>
+    <p class="subtitle">Gestión de evaluaciones de proveedores.</p>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <div>
+            <strong>Usuario:</strong>
+            <span sec:authentication="name"></span>
+        </div>
+
+        <div>
+            <strong>Rol:</strong>
+            <span sec:authentication="principal.authorities"></span>
+        </div>
+    </div>
+
+    <form th:action="@{/logout}" method="post" style="text-align:right; margin-bottom:30px;">
+        <button type="submit">Cerrar sesión</button>
+    </form>
+
+    <div>
+        <span sec:authorize="hasAnyRole('ADMIN', 'ANALISTA_COMPRAS')">
+            <a th:href="@{/evaluaciones/nueva}" class="link">+ Registrar evaluación</a>
+            &nbsp; | &nbsp;
+        </span>
+
+        <a th:href="@{/proveedores}" class="link">Ver proveedores</a>
+        &nbsp; | &nbsp;
+
+        <a th:href="@{/criterios}" class="link">Ver criterios</a>
+
+        <span sec:authorize="hasRole('ADMIN')">
+            &nbsp; | &nbsp;
+            <a th:href="@{/usuarios}" class="link">Ver usuarios</a>
+        </span>
+    </div>
+
+    <br>
+
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <h2 th:text="${totalEvaluaciones}">0</h2>
+            <p>Total evaluaciones</p>
+        </div>
+
+        <div class="kpi-card">
+            <h2 th:text="${#numbers.formatDecimal(promedioGeneral, 1, 2)}">0.00</h2>
+            <p>Promedio general</p>
+        </div>
+
+        <div class="kpi-card">
+            <h2 th:text="${proveedoresSobresalientes}">0</h2>
+            <p>Sobresalientes (&gt;= 80)</p>
+        </div>
+
+        <div class="kpi-card">
+            <h2 th:text="${proveedoresEnRiesgo}">0</h2>
+            <p>En riesgo (&lt; 60)</p>
+        </div>
+    </div>
+
+    <br>
+
+    <h2>Ranking de proveedores</h2>
+    <p class="subtitle">Promedio de desempeño por proveedor, ordenado de mayor a menor.</p>
+
+    <table>
+        <thead>
+        <tr>
+            <th>Ranking</th>
+            <th>Proveedor</th>
+            <th>Promedio</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        <tr th:each="ranking, iterStat : ${rankingProveedores}">
+            <td th:text="${iterStat.count}"></td>
+            <td th:text="${ranking.proveedor}"></td>
+            <td>
+                <span th:text="${#numbers.formatDecimal(ranking.promedio,1,2)}"
+                      th:classappend="${ranking.promedio >= 80} ? ' semaforo-verde' : (${ranking.promedio >= 60} ? ' semaforo-amarillo' : ' semaforo-rojo')">
+                </span>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <br>
+
+    <h2>Ranking por sector económico</h2>
+    <p class="subtitle">
+        Comparación de proveedores agrupados por sector económico.
+    </p>
+
+    <form th:action="@{/evaluaciones}" method="get" style="margin-bottom:20px;">
+        <input type="hidden" name="filtro" th:value="${filtroSeleccionado}">
+        <input type="hidden" name="proveedorId" th:value="${proveedorSeleccionado}">
+
+        <label for="sector">
+            <strong>Filtrar ranking por sector:</strong>
+        </label>
+
+        <select id="sector" name="sector">
+            <option value="todos" th:selected="${sectorSeleccionado == 'todos'}">
+                Todos los sectores
+            </option>
+
+            <option th:each="sectorItem : ${sectoresEconomicos}"
+                    th:value="${sectorItem}"
+                    th:text="${sectorItem}"
+                    th:selected="${sectorSeleccionado == sectorItem}">
+            </option>
+        </select>
+
+        <button type="submit">Aplicar sector</button>
+
+        <a th:href="@{/evaluaciones}" class="link" style="margin-left:10px;">
+            Limpiar sector
+        </a>
+    </form>
+
+    <div class="indicadores-sector-grid" th:if="${!#lists.isEmpty(indicadoresPorSector)}">
+        <div class="indicador-sector-card" th:each="indicador : ${indicadoresPorSector}">
+            <h3 th:text="${indicador.sector}">Sector</h3>
+
+            <div>
+                <strong>🏆 Mejor proveedor</strong>
+                <p th:text="${indicador.mejorProveedor}">Proveedor</p>
+                <span class="semaforo-verde"
+                      th:text="${#numbers.formatDecimal(indicador.mejorPromedio, 1, 2)}">0.00</span>
+            </div>
+
+            <br>
+
+            <div>
+                <strong>⚠️ Proveedor en riesgo</strong>
+                <p th:text="${indicador.proveedorEnRiesgo}">Proveedor</p>
+                <span th:text="${#numbers.formatDecimal(indicador.promedioRiesgo, 1, 2)}"
+                      th:classappend="${indicador.promedioRiesgo >= 80} ? ' semaforo-verde' : (${indicador.promedioRiesgo >= 60} ? ' semaforo-amarillo' : ' semaforo-rojo')">
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <br>
+
+    <div th:if="${#lists.isEmpty(rankingPorSector)}">
+        <p class="subtitle">
+            No hay proveedores evaluados para el sector seleccionado.
+        </p>
+    </div>
+
+    <table th:if="${!#lists.isEmpty(rankingPorSector)}">
+        <thead>
+        <tr>
+            <th>Sector</th>
+            <th>Proveedor</th>
+            <th>Promedio</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        <tr th:each="rankingSector : ${rankingPorSector}">
+            <td th:text="${rankingSector.sector}"></td>
+            <td th:text="${rankingSector.proveedor}"></td>
+            <td>
+                <span th:text="${#numbers.formatDecimal(rankingSector.promedio, 1, 2)}"
+                      th:classappend="${rankingSector.promedio >= 80} ? ' semaforo-verde' : (${rankingSector.promedio >= 60} ? ' semaforo-amarillo' : ' semaforo-rojo')">
+                </span>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <br>
+
+    <h2>Historial de evaluaciones</h2>
+
+    <form th:action="@{/evaluaciones}" method="get" style="margin-bottom:20px;">
+        <label for="filtro"><strong>Filtrar por desempeño:</strong></label>
+
+        <select id="filtro" name="filtro">
+            <option value="todos" th:selected="${filtroSeleccionado == 'todos'}">Todos</option>
+            <option value="sobresalientes" th:selected="${filtroSeleccionado == 'sobresalientes'}">Sobresalientes (&gt;= 80)</option>
+            <option value="intermedios" th:selected="${filtroSeleccionado == 'intermedios'}">Intermedios (60 - 79)</option>
+            <option value="riesgo" th:selected="${filtroSeleccionado == 'riesgo'}">En riesgo (&lt; 60)</option>
+        </select>
+
+        &nbsp;&nbsp;
+
+        <label for="proveedorId"><strong>Filtrar por proveedor:</strong></label>
+
+        <select id="proveedorId" name="proveedorId">
+            <option value="">Todos los proveedores</option>
+
+            <option th:each="proveedor : ${proveedores}"
+                    th:value="${proveedor.idProveedor}"
+                    th:text="${proveedor.razonSocial}"
+                    th:selected="${proveedorSeleccionado != null && proveedorSeleccionado == proveedor.idProveedor}">
+            </option>
+        </select>
+
+        <input type="hidden" name="sector" th:value="${sectorSeleccionado}">
+
+        <button type="submit">Aplicar filtro</button>
+
+        <a th:href="@{/evaluaciones}" class="link" style="margin-left:10px;">
+            Limpiar filtros
+        </a>
+    </form>
+
+    <div th:if="${#lists.isEmpty(evaluaciones)}">
+        <p class="subtitle">
+            No hay evaluaciones registradas para el filtro seleccionado.
+        </p>
+    </div>
+
+    <table th:if="${!#lists.isEmpty(evaluaciones)}">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Proveedor</th>
+            <th>Fecha</th>
+            <th>Resultado Final</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        <tr th:each="evaluacion : ${evaluaciones}">
+            <td th:text="${evaluacion.idEvaluacion}"></td>
+            <td th:text="${evaluacion.proveedor.razonSocial}"></td>
+            <td th:text="${evaluacion.fechaEvaluacion}"></td>
+
+            <td>
+                <span th:text="${evaluacion.resultadoFinal}"
+                      th:classappend="${evaluacion.resultadoFinal >= 80} ? ' semaforo-verde' : (${evaluacion.resultadoFinal >= 60} ? ' semaforo-amarillo' : ' semaforo-rojo')">
+                </span>
+            </td>
+
+            <td>
+                <span class="badge"
+                      th:text="${evaluacion.activo} ? 'ACTIVA' : 'INACTIVA'">
+                </span>
+            </td>
+
+            <td>
+                <a th:href="@{/evaluaciones/detalle/{id}(id=${evaluacion.idEvaluacion})}"
+                   class="link">Ver</a>
+
+                <span sec:authorize="hasRole('ADMIN')">
+                    &nbsp; | &nbsp;
+                    <a th:href="@{/evaluaciones/eliminar/{id}(id=${evaluacion.idEvaluacion})}"
+                       class="link"
+                       onclick="return confirm('¿Está seguro de eliminar esta evaluación?');">
+                        Eliminar
+                    </a>
+                </span>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,64 @@
+{
+  "info": {
+    "name": "EPCORE - Evidencia SENA",
+    "description": "Pruebas de autenticación JWT y consumo protegido para la evidencia GA8-220501096-AA1-EV02.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {"key": "baseUrl", "value": "http://localhost:8080"},
+    {"key": "correo", "value": "admin@epcore.com"},
+    {"key": "password", "value": "CAMBIAR"},
+    {"key": "token", "value": ""}
+  ],
+  "item": [
+    {
+      "name": "1. Login JWT",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"correo\": \"{{correo}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/auth/login"
+      },
+      "response": []
+    },
+    {
+      "name": "2. Usuario autenticado",
+      "request": {
+        "method": "GET",
+        "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+        "url": "{{baseUrl}}/api/auth/me"
+      },
+      "response": []
+    },
+    {
+      "name": "3. Proveedores protegidos",
+      "request": {
+        "method": "GET",
+        "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+        "url": "{{baseUrl}}/api/proveedores"
+      },
+      "response": []
+    },
+    {
+      "name": "4. Proveedores sin token - debe ser 401",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/proveedores"
+      },
+      "response": []
+    },
+    {
+      "name": "5. Token inválido - debe ser 401",
+      "request": {
+        "method": "GET",
+        "header": [{"key": "Authorization", "value": "Bearer token-invalido"}],
+        "url": "{{baseUrl}}/api/proveedores"
+      },
+      "response": []
+    }
+  ]
+}
