@@ -37,6 +37,15 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     @Override
     public Usuario guardar(Usuario usuario) {
+        // Un rol personalizado exige elegir el perfil; los roles base no lo usan.
+        if (usuario.getRol() == com.epcore.entity.Rol.PERSONALIZADO) {
+            if (usuario.getPerfil() == null || !Boolean.TRUE.equals(usuario.getPerfil().getActivo())) {
+                throw new IllegalArgumentException("Seleccione un rol personalizado activo para este usuario.");
+            }
+        } else {
+            usuario.setPerfil(null);
+        }
+
         if (usuario.getIdUsuario() != null) {
             Usuario usuarioExistente = usuarioRepository.findById(usuario.getIdUsuario())
                     .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));

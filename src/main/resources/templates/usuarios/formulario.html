@@ -44,6 +44,19 @@
             <option value="ANALISTA_COMPRAS">ANALISTA_COMPRAS</option>
             <option value="AUDITOR">AUDITOR</option>
             <option value="GERENTE">GERENTE</option>
+            <option value="DIRECTOR_COMPRAS">DIRECTOR_COMPRAS</option>
+            <option value="OFICIAL_CUMPLIMIENTO">OFICIAL_CUMPLIMIENTO</option>
+            <option value="EVALUADOR_TECNICO">EVALUADOR_TECNICO</option>
+            <option value="AREA_SOLICITANTE">AREA_SOLICITANTE</option>
+            <option value="PERSONALIZADO">PERSONALIZADO (rol creado por el cliente)</option>
+        </select>
+
+        <br><br>
+
+        <label for="perfil">Rol personalizado (solo si eligió PERSONALIZADO)</label>
+        <select id="perfil" th:field="*{perfil}">
+            <option value="">Ninguno</option>
+            <option th:each="p : ${perfiles}" th:value="${p.idRol}" th:text="${p.nombre}"></option>
         </select>
 
         <br><br>

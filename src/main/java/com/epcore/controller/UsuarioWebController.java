@@ -10,9 +10,24 @@ import org.springframework.web.bind.annotation.*;
 public class UsuarioWebController {
 
     private final UsuarioService usuarioService;
+    private final org.springframework.beans.factory.ObjectProvider<com.epcore.service.RolSistemaService> rolSistemaService;
 
-    public UsuarioWebController(UsuarioService usuarioService) {
+    public UsuarioWebController(UsuarioService usuarioService,
+                                org.springframework.beans.factory.ObjectProvider<com.epcore.service.RolSistemaService> rolSistemaService) {
         this.usuarioService = usuarioService;
+        this.rolSistemaService = rolSistemaService;
+    }
+
+    /** Roles personalizados activos, para el formulario de usuario. */
+    @ModelAttribute("perfiles")
+    public java.util.List<com.epcore.entity.RolSistema> perfiles() {
+        com.epcore.service.RolSistemaService servicio = rolSistemaService.getIfAvailable();
+        if (servicio == null) {
+            return java.util.List.of();
+        }
+        return servicio.listar().stream()
+                .filter(r -> !Boolean.TRUE.equals(r.getPredefinido()) && Boolean.TRUE.equals(r.getActivo()))
+                .toList();
     }
 
     @GetMapping("/usuarios")

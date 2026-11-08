@@ -36,7 +36,7 @@
             <td th:text="${usuario.idUsuario}"></td>
             <td th:text="${usuario.nombre}"></td>
             <td th:text="${usuario.correo}"></td>
-            <td th:text="${usuario.rol}"></td>
+            <td th:text="${usuario.perfil != null ? usuario.perfil.nombre : usuario.rol}"></td>
             <td>
                 <span class="badge"
                       th:text="${usuario.activo} ? 'ACTIVO' : 'INACTIVO'"></span>

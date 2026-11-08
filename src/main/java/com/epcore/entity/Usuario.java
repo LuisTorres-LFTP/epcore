@@ -27,6 +27,11 @@ public class Usuario {
     @Column(nullable = false, length = 30)
     private Rol rol;
 
+    /** Rol configurable del cliente; obligatorio solo cuando rol = PERSONALIZADO. */
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "id_rol_personalizado")
+    private RolSistema perfil;
+
     @Column(nullable = false)
     private Boolean activo = true;
 
@@ -81,6 +86,14 @@ public class Usuario {
 
     public void setRol(Rol rol) {
         this.rol = rol;
+    }
+
+    public RolSistema getPerfil() {
+        return perfil;
+    }
+
+    public void setPerfil(RolSistema perfil) {
+        this.perfil = perfil;
     }
 
     public Boolean getActivo() {

@@ -35,7 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Pruebas de ataque: cada prueba simula a un atacante y verifica que
  * EpCore lo bloquee. Usa la configuración de seguridad real, sin base de datos.
  */
-@WebMvcTest(controllers = {UsuarioController.class, UsuarioWebController.class})
+@WebMvcTest(controllers = {UsuarioController.class, UsuarioWebController.class, com.epcore.controller.RolSistemaController.class})
 @Import({SecurityConfig.class, JwtAuthenticationFilter.class, JwtService.class, LoginAttemptService.class})
 @TestPropertySource(properties = "app.jwt.secret=" + PruebasAtaqueSeguridadTest.SECRETO)
 class PruebasAtaqueSeguridadTest {
@@ -54,14 +54,25 @@ class PruebasAtaqueSeguridadTest {
     @MockitoBean
     private UsuarioService usuarioService;
 
+    @MockitoBean
+    private com.epcore.service.RolSistemaService rolSistemaService;
+
     private UserDetails auditor;
 
     @BeforeEach
     void preparar() {
-        auditor = User.withUsername("auditor@epcore.co").password("x").roles("AUDITOR").build();
+        auditor = usr("auditor@epcore.co", com.epcore.entity.Rol.AUDITOR);
         when(userDetailsService.loadUserByUsername("auditor@epcore.co")).thenReturn(auditor);
         when(userDetailsService.loadUserByUsername("admin@epcore.co")).thenReturn(
-                User.withUsername("admin@epcore.co").password("x").roles("ADMIN").build());
+                usr("admin@epcore.co", com.epcore.entity.Rol.ADMIN));
+    }
+
+    /** Usuario de prueba con ROLE_<rol> y los permisos predeterminados del rol. */
+    static UserDetails usr(String correo, com.epcore.entity.Rol rol) {
+        java.util.List<String> auts = new java.util.ArrayList<>();
+        auts.add("ROLE_" + rol.name());
+        PerfilesPredeterminados.permisosDe(rol).forEach(p -> auts.add(p.name()));
+        return User.withUsername(correo).password("x").authorities(auts.toArray(String[]::new)).build();
     }
 
     private String bearer(String token) {
@@ -139,7 +150,7 @@ class PruebasAtaqueSeguridadTest {
     @Test
     @DisplayName("Un AUDITOR intenta abrir la gestión web de usuarios: debe responder 403")
     void auditorNoEntraAGestionDeUsuarios() throws Exception {
-        mvc.perform(get("/usuarios").with(user("auditor@epcore.co").roles("AUDITOR")))
+        mvc.perform(get("/usuarios").with(user(usr("auditor@epcore.co", com.epcore.entity.Rol.AUDITOR))))
                 .andExpect(status().isForbidden());
     }
 
@@ -148,7 +159,7 @@ class PruebasAtaqueSeguridadTest {
     @Test
     @DisplayName("CSRF: un sitio externo envía el formulario de usuarios con la sesión del ADMIN: debe responder 403")
     void formularioSinTokenCsrf() throws Exception {
-        mvc.perform(post("/usuarios/guardar").with(user("admin@epcore.co").roles("ADMIN"))
+        mvc.perform(post("/usuarios/guardar").with(user(usr("admin@epcore.co", com.epcore.entity.Rol.ADMIN)))
                         .param("nombre", "Atacante").param("correo", "atacante@epcore.co")
                         .param("password", "Clave1234").param("rol", "ADMIN").param("activo", "true"))
                 .andExpect(status().isForbidden());
@@ -157,7 +168,7 @@ class PruebasAtaqueSeguridadTest {
     @Test
     @DisplayName("CSRF por enlace: inactivar un usuario con un GET (por ejemplo, una imagen en un correo): no debe permitirse")
     void cambioDeEstadoPorGet() throws Exception {
-        mvc.perform(get("/usuarios/inactivar/1").with(user("admin@epcore.co").roles("ADMIN")))
+        mvc.perform(get("/usuarios/inactivar/1").with(user(usr("admin@epcore.co", com.epcore.entity.Rol.ADMIN))))
                 .andExpect(status().isMethodNotAllowed());
     }
 
@@ -166,7 +177,7 @@ class PruebasAtaqueSeguridadTest {
     @Test
     @DisplayName("Uso legítimo: el ADMIN envía el formulario con token CSRF y sí se procesa")
     void formularioConTokenCsrfFunciona() throws Exception {
-        mvc.perform(post("/usuarios/guardar").with(user("admin@epcore.co").roles("ADMIN")).with(csrf())
+        mvc.perform(post("/usuarios/guardar").with(user(usr("admin@epcore.co", com.epcore.entity.Rol.ADMIN))).with(csrf())
                         .param("nombre", "Nueva Analista").param("correo", "analista@epcore.co")
                         .param("password", "Clave1234").param("rol", "ANALISTA_COMPRAS").param("activo", "true"))
                 .andExpect(status().is3xxRedirection());
@@ -176,7 +187,7 @@ class PruebasAtaqueSeguridadTest {
     @DisplayName("Uso legítimo: el ADMIN con token JWT sí puede listar usuarios por la API")
     void adminConTokenListaUsuarios() throws Exception {
         String token = jwtService.generateToken(
-                User.withUsername("admin@epcore.co").password("x").roles("ADMIN").build());
+                usr("admin@epcore.co", com.epcore.entity.Rol.ADMIN));
 
         mvc.perform(get("/api/usuarios").header("Authorization", bearer(token)))
                 .andExpect(status().isOk());
@@ -186,7 +197,7 @@ class PruebasAtaqueSeguridadTest {
     @DisplayName("La API no acepta la sesión web (cookie) en lugar del token")
     void apiNoAceptaSesionWeb() throws Exception {
         // Sesión web real (como la que deja el inicio de sesión del navegador)
-        UserDetails admin = User.withUsername("admin@epcore.co").password("x").roles("ADMIN").build();
+        UserDetails admin = usr("admin@epcore.co", com.epcore.entity.Rol.ADMIN);
         org.springframework.mock.web.MockHttpSession sesion = new org.springframework.mock.web.MockHttpSession();
         sesion.setAttribute("SPRING_SECURITY_CONTEXT", new org.springframework.security.core.context.SecurityContextImpl(
                 new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
@@ -196,5 +207,46 @@ class PruebasAtaqueSeguridadTest {
         mvc.perform(get("/usuarios").session(sesion)).andExpect(status().isOk());
         // ...pero la API la ignora y exige el token.
         mvc.perform(get("/api/usuarios").session(sesion)).andExpect(status().isUnauthorized());
+    }
+
+    // ---------- Roles nuevos y permisos ----------
+
+    @Test
+    @DisplayName("Un ADMIN no puede aprobar documentos (separación de funciones)")
+    void adminNoApruebaDocumentos() throws Exception {
+        mvc.perform(post("/proveedores/1/documentos/1/estado")
+                        .with(user(usr("admin@epcore.co", com.epcore.entity.Rol.ADMIN)))
+                        .with(csrf()).param("estadoValidacion", "APROBADO"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("Un EVALUADOR_TECNICO no puede gestionar usuarios")
+    void evaluadorTecnicoNoAdministra() throws Exception {
+        mvc.perform(get("/usuarios").with(user(usr("tec@epcore.co", com.epcore.entity.Rol.EVALUADOR_TECNICO))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("Un usuario PROVEEDOR no entra a la parte interna")
+    void proveedorNoEntraALaParteInterna() throws Exception {
+        mvc.perform(get("/usuarios").with(user(usr("prov@empresa.co", com.epcore.entity.Rol.PROVEEDOR))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("API: solo quien tiene ROLES_GESTIONAR consulta los roles")
+    void apiRolesSoloAdministrador() throws Exception {
+        String tokenAuditor = jwtService.generateToken(auditor);
+        mvc.perform(get("/api/roles").header("Authorization", bearer(tokenAuditor)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("API: una ruta no declarada se niega por defecto")
+    void apiRutaNoDeclaradaSeNiega() throws Exception {
+        String token = jwtService.generateToken(usr("admin@epcore.co", com.epcore.entity.Rol.ADMIN));
+        mvc.perform(get("/api/ruta-que-no-existe").header("Authorization", bearer(token)))
+                .andExpect(status().isForbidden());
     }
 }
