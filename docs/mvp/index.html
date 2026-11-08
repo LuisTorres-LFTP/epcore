@@ -1065,14 +1065,23 @@ function vPDocs(){const p=myProv(),c=cumplimiento(p);
   <td><div class="actions"><button class="btn btn-sm ${!d||["RECHAZADO","VENCIDO"].includes(s.k)?"btn-primary":""}" data-up="${k.id}"><i class="ti ti-upload"></i>${d?"Actualizar":"Subir"}</button></div></td></tr>`}).join("")}</tbody></table></div></div>`;
  $("#upAny").onclick=()=>formDoc();document.querySelectorAll("[data-up]").forEach(b=>b.onclick=()=>formDoc(null,b.dataset.up))}
 
-function vPProc(){const p=myProv(),L=DB.procesos.filter(pr=>visibleParaProv(pr,p.id));
+function vPProc(){const p=myProv(),T=DB.procesos.filter(pr=>visibleParaProv(pr,p.id)),f=ST.f||"abiertos",q=(ST.q||"").toLowerCase().trim(),ni=ST.ni??p.nicho,mo=ST.mo||"",
+ F={abiertos:["Recibiendo ofertas",pr=>pr.estado==="PUBLICADO"],inv:["Invitaciones",pr=>pr.visibilidad==="INVITACION"],mias:["Mis ofertas",pr=>pr.ofertas.some(o=>o.prov===p.id)],todos:["Todos",()=>true]},
+ L=T.filter(F[f][1]).filter(pr=>!ni||pr.nicho===ni).filter(pr=>!mo||pr.perfil===mo).filter(pr=>!q||[pr.codigo,pr.nombre,pr.entidad].join(" ").toLowerCase().includes(q)).sort((a,b)=>a.cierre.localeCompare(b.cierre));
  $("#view").innerHTML=`<div class="info-box"><i class="ti ti-gavel" style="font-size:20px"></i><div>Aquí ves las <b>convocatorias abiertas</b> y los procesos a los que <b>fuiste invitado</b>. Tu oferta es <b>confidencial</b>: los demás proponentes no la ven. Puedes reemplazarla hasta la fecha de cierre. Los procesos de entidades públicas se presentan en <b>SECOP II</b>.</div></div>
+ <div class="toolbar"><div class="search" style="margin-left:0"><i class="ti ti-search"></i><input class="input" id="pq" placeholder="Buscar por código, objeto o entidad" value="${esc(ST.q||"")}" style="width:300px"></div>
+  <select class="input" id="pni" style="width:200px"><option value="">Todos los nichos</option>${NICHOS.map(n=>`<option ${n.id===ni?"selected":""}>${esc(n.id)}</option>`).join("")}</select>
+  <select class="input" id="pmo" style="width:230px"><option value="">Todas las modalidades</option>${DB.perfiles.map(x=>`<option value="${x.id}" ${x.id===mo?"selected":""}>${esc(modLabel(x.id))}</option>`).join("")}</select></div>
+ <div class="chips" style="margin-bottom:14px">${Object.entries(F).map(([k,[l,fn]])=>`<button class="chip ${f===k?"on":""}" data-pf="${k}">${l}<span class="n">${T.filter(fn).filter(pr=>!ni||pr.nicho===ni).length}</span></button>`).join("")}<span class="sub" style="align-self:center;margin-left:8px">${L.length} resultado(s) · ordenados por fecha de cierre</span></div>
  <div class="grid g2">${L.map(pr=>{const mia=pr.ofertas.find(o=>o.prov===p.id),d=daysTo(pr.cierre),res=resultadoProv(pr,p);
   return`<div class="card" style="cursor:pointer" data-pp="${pr.id}"><div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">${modPill(pr.perfil)}${nichePill(pr.nicho)}${visPill(pr)}</div>
    <h3 style="margin:0 0 4px;font-size:16px">${esc(pr.nombre)}</h3><span class="sub">${esc(pr.entidad)} · ${esc(pr.codigo)}</span>
    <div style="display:flex;gap:18px;margin-top:14px;align-items:flex-end;flex-wrap:wrap"><div><span class="sub">Presupuesto</span><br><b>${cop(pr.presupuesto)}</b></div><div><span class="sub">Cierre</span><br><b style="color:${pr.estado==="PUBLICADO"&&d<=7?"#B45309":"inherit"}">${fdate(pr.cierre)}</b></div>
-   <div style="margin-left:auto">${res?`<span class="pill ${res.c}"><i class="ti ${res.i}"></i>${res.l}</span>`:mia?'<span class="pill p-ok"><i class="ti ti-send"></i>Oferta enviada</span>':pr.estado==="PUBLICADO"?(pr.perfil==="PUB"?'<span class="pill p-violet">Se presenta en SECOP II</span>':'<span class="pill p-warn"><i class="ti ti-clock"></i>Pendiente tu oferta</span>'):`<span class="pill p-gray">${ESTADOS[pr.estado][0]}</span>`}</div></div></div>`}).join("")||'<div class="empty"><i class="ti ti-gavel"></i>No hay procesos disponibles para ti</div>'}</div>`;
- document.querySelectorAll("[data-pp]").forEach(b=>b.onclick=()=>provProcDetalle(+b.dataset.pp))}
+   <div style="margin-left:auto">${res?`<span class="pill ${res.c}"><i class="ti ${res.i}"></i>${res.l}</span>`:mia?'<span class="pill p-ok"><i class="ti ti-send"></i>Oferta enviada</span>':pr.estado==="PUBLICADO"?(pr.perfil==="PUB"?'<span class="pill p-violet">Se presenta en SECOP II</span>':'<span class="pill p-warn"><i class="ti ti-clock"></i>Pendiente tu oferta</span>'):`<span class="pill p-gray">${ESTADOS[pr.estado][0]}</span>`}</div></div></div>`}).join("")||'<div class="empty"><i class="ti ti-gavel"></i>No hay procesos con esos filtros</div>'}</div>`;
+ document.querySelectorAll("[data-pp]").forEach(b=>b.onclick=()=>provProcDetalle(+b.dataset.pp));
+ document.querySelectorAll("[data-pf]").forEach(b=>b.onclick=()=>{ST.f=b.dataset.pf;vPProc()});
+ $("#pni").onchange=e=>{ST.ni=e.target.value;vPProc()};$("#pmo").onchange=e=>{ST.mo=e.target.value;vPProc()};
+ $("#pq").oninput=e=>{ST.q=e.target.value;const pos=e.target.selectionStart;vPProc();$("#pq").focus();$("#pq").setSelectionRange(pos,pos)}}
 
 /* El proveedor solo conoce su propio resultado */
 function resultadoProv(pr,p){if(!pr.ofertas.some(o=>o.prov===p.id))return null;
