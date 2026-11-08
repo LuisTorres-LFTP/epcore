@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EpCore · Enterprise Provider Core (MVP v2)</title>
+<title>EpCore · Enterprise Provider Core (MVP v3)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
@@ -189,6 +189,7 @@ tbody tr{transition:.12s}tbody tr:hover{background:#F8FBFF}
       <div class="field"><label>Contraseña</label><input class="input" id="lgPass" type="password" value="demo1234"><span class="err" id="lgErr"></span></div>
       <button class="btn btn-primary" style="width:100%;justify-content:center;height:44px">Entrar <i class="ti ti-arrow-right"></i></button>
       <p style="font-size:12px;color:var(--muted);text-align:center;margin-top:14px">Prototipo navegable · datos de ejemplo guardados en este navegador · <a href="#" id="resetData" style="color:var(--blue)">Restablecer datos</a></p>
+      <p style="text-align:center;font-size:13px;margin-top:4px">¿Eres proveedor y aún no tienes cuenta? <a href="#" id="regLink" style="color:var(--blue);font-weight:600">Regístrate en el portal</a></p>
     </form>
   </div>
 </section>
@@ -209,15 +210,15 @@ tbody tr{transition:.12s}tbody tr:hover{background:#F8FBFF}
   </main>
 </section>
 <div id="modalRoot"></div>
-<div class="mvp-tag">MVP v2 · prototipo</div>
+<div class="mvp-tag">MVP v3 · prototipo</div>
 
 <script>
 /* ======================================================================
    CONFIGURACIÓN BASE
    ====================================================================== */
-const ROLES={ADMIN:"Administrador",ANALISTA_COMPRAS:"Analista de compras",DIRECTOR_COMPRAS:"Director de compras",GERENTE:"Gerente",AUDITOR:"Auditor"};
-const ROLE_DESC={ADMIN:"Configura todo el sistema",ANALISTA_COMPRAS:"Registra, carga y evalúa",DIRECTOR_COMPRAS:"Aprueba documentos",GERENTE:"Aprueba y consulta indicadores",AUDITOR:"Consulta y trazabilidad"};
-const DEMO={ADMIN:["Luis Torres","luis.torres@epcore.co"],ANALISTA_COMPRAS:["Valentina Ruiz","v.ruiz@epcore.co"],DIRECTOR_COMPRAS:["Jorge Ramírez","j.ramirez@epcore.co"],GERENTE:["Laura Restrepo","l.restrepo@epcore.co"],AUDITOR:["Carlos Mejía","c.mejia@epcore.co"]};
+const ROLES={ADMIN:"Administrador",ANALISTA_COMPRAS:"Analista de compras",DIRECTOR_COMPRAS:"Director de compras",GERENTE:"Gerente",AUDITOR:"Auditor",PROVEEDOR:"Proveedor (portal)"};
+const ROLE_DESC={ADMIN:"Configura todo el sistema",ANALISTA_COMPRAS:"Registra, carga y evalúa",DIRECTOR_COMPRAS:"Aprueba documentos",GERENTE:"Aprueba y consulta indicadores",AUDITOR:"Consulta y trazabilidad",PROVEEDOR:"Sube sus documentos y ofertas"};
+const DEMO={ADMIN:["Luis Torres","luis.torres@epcore.co"],ANALISTA_COMPRAS:["Valentina Ruiz","v.ruiz@epcore.co"],DIRECTOR_COMPRAS:["Jorge Ramírez","j.ramirez@epcore.co"],GERENTE:["Laura Restrepo","l.restrepo@epcore.co"],AUDITOR:["Carlos Mejía","c.mejia@epcore.co"],PROVEEDOR:["Andrés Ríos","contacto@brilloexpres.co"]};
 const APROBADORES=["DIRECTOR_COMPRAS","GERENTE"];
 const NICHOS=[
  {id:"Aseo y limpieza",icon:"ti-spray",color:"#0EA5A4"},
@@ -361,11 +362,15 @@ function seed(){
   {id:5,perfil:"PRIV",nicho:"Transporte y logística",nombre:"Transporte de carga refrigerada Eje Cafetero",entidad:"Distribuidora del Café SAS",codigo:"CP-DC-2026-027",presupuesto:260000000,cierre:addDays(25),estado:"BORRADOR",req:PL("PRIV","Transporte y logística"),aprob:{},ofertas:[],adendas:[],hist:[{fecha:addDays(-1)+"T15:00",por:"Valentina Ruiz",t:"Proceso creado con la plantilla «Convocatoria privada»"}]},
   {id:6,perfil:"FIN",nicho:"Construcción",nombre:"Adecuación de oficinas de atención al cliente",entidad:"Banco Cafetero de Colombia",codigo:"RFP-BC-2026-019",presupuesto:850000000,cierre:addDays(-25),estado:"ADJUDICADO",ganador:17,adjPor:"Laura Restrepo",adjFecha:addDays(-15),req:PL("FIN","Construcción",{sarlaft:false}),aprob:{DIRECTOR_COMPRAS:"APROBADO",GERENTE:"APROBADO"},
    ofertas:[{id:1,prov:17,valor:790000000,plazo:60,tecnica:85,fecha:addDays(-27)},{id:2,prov:18,valor:720000000,plazo:75,tecnica:70,fecha:addDays(-26)}],adendas:[],hist:[{fecha:addDays(-15)+"T10:00",por:"Laura Restrepo",t:"Adjudicado a Construcciones Eje SAS"}]}];
- const usuarios=Object.entries(DEMO).map(([r,[n,c]],i)=>({id:i+1,nombre:n,correo:c,rol:r,activo:true})).concat([{id:6,nombre:"Santiago López",correo:"s.lopez@epcore.co",rol:"ANALISTA_COMPRAS",activo:false}]);
+ const INV={1:[1,2,3,4],2:[5,6],6:[17,18]};procesos.forEach(p=>{p.visibilidad=p.perfil==="PUB"?"SECOP":INV[p.id]?"INVITACION":"ABIERTO";p.invitados=INV[p.id]||[]});
+ procesos.push({id:7,perfil:"FIN",nicho:"Aseo y limpieza",nombre:"Aseo, cafetería y jardinería para la Dirección General",entidad:"Banco Cafetero de Colombia",codigo:"RFP-BC-2026-044",presupuesto:410000000,cierre:addDays(9),estado:"PUBLICADO",visibilidad:"INVITACION",invitados:[1,2,3],req:PL("FIN","Aseo y limpieza",{unspsc:"76111500"}),aprob:{DIRECTOR_COMPRAS:"APROBADO",GERENTE:"APROBADO"},
+  ofertas:[{id:1,prov:1,valor:395000000,plazo:15,tecnica:null,fecha:addDays(-1),via:"PORTAL"}],adendas:[],hist:[{fecha:addDays(-1)+"T16:20",por:"Paula Gómez",t:"Oferta recibida por el portal: Limpieza Total SAS"},{fecha:addDays(-5)+"T09:00",por:"Laura Restrepo",t:"Términos aprobados por el Gerente (2/2). Proceso publicado e invitaciones enviadas a 3 proveedores"}]});
+ const usuarios=Object.entries(DEMO).filter(([r])=>r!=="PROVEEDOR").map(([r,[n,c]],i)=>({id:i+1,nombre:n,correo:c,rol:r,activo:true})).concat([{id:6,nombre:"Santiago López",correo:"s.lopez@epcore.co",rol:"ANALISTA_COMPRAS",activo:false},{id:7,nombre:"Andrés Ríos",correo:"contacto@brilloexpres.co",rol:"PROVEEDOR",prov:2,activo:true}]);
  const notifs=[
   {id:1,para:["DIRECTOR_COMPRAS"],icon:"ti-file-upload",msg:"Valentina Ruiz cargó documentos de Aseo Integral del Eje. Requieren tu revisión (1 de 2).",fecha:nowISO(),leida:[]},
   {id:2,para:["GERENTE"],icon:"ti-signature",msg:"Jorge Ramírez (Director de compras) aprobó un documento de TransCafé Express. Pasa a tu aprobación como supervisor.",fecha:nowISO(),leida:[]},
-  {id:3,para:["ANALISTA_COMPRAS","ADMIN"],icon:"ti-file-x",msg:"Un documento de Nube Digital SAS fue rechazado por Gerencia: ilegible.",fecha:nowISO(),leida:[]}];
+  {id:3,para:["ANALISTA_COMPRAS","ADMIN"],icon:"ti-file-x",msg:"Un documento de Nube Digital SAS fue rechazado por Gerencia: ilegible.",fecha:nowISO(),leida:[]},
+  {id:4,para:["PROV:2","PROV:1","PROV:3"],icon:"ti-mail",msg:"Banco Cafetero de Colombia te invitó a presentar oferta en RFP-BC-2026-044: Aseo, cafetería y jardinería para la Dirección General.",fecha:nowISO(),leida:[]}];
  const audit=[
   {fecha:addDays(-2)+"T09:12",usuario:"Laura Restrepo",rol:"GERENTE",accion:"Rechazó «Certificado de Cámara de Comercio» de Nube Digital SAS"},
   {fecha:addDays(-1)+"T15:40",usuario:"Jorge Ramírez",rol:"DIRECTOR_COMPRAS",accion:"Aprobó un documento de TransCafé Express (1/2 · Director de compras)"},
@@ -378,7 +383,7 @@ function seed(){
   {id:5,de:1,para:3,texto:"Recuerden que la licitación LP-GQ-045-2026 cierra pronto. Prioricen los documentos del nicho de aseo.",fecha:addDays(0)+"T08:00",leido:false,ref:{tipo:"proc",id:4}}];
  return {perfiles,criterios,catalogo,proveedores,documentos,evaluaciones,procesos,usuarios,notifs,audit,mensajes};
 }
-const KEY="epcore_mvp_v5";
+const KEY="epcore_mvp_v6";
 let DB=JSON.parse(localStorage.getItem(KEY)||"null");
 const save=()=>localStorage.setItem(KEY,JSON.stringify(DB));
 let ME=null,VIEW="dash",ST={},charts=[];
@@ -475,7 +480,8 @@ function ring(s,size=74){const l=level(s);return`<div class="ring" style="width:
 function toast(msg,icon="ti-circle-check"){const t=document.createElement("div");t.className="toast";t.innerHTML=`<i class="ti ${icon}" style="font-size:20px;color:#5EEAD4"></i>${msg}`;document.body.appendChild(t);setTimeout(()=>t.remove(),3200)}
 function log(accion){DB.audit.unshift({fecha:localNow(),usuario:ME.nombre,rol:ME.rol,accion});save()}
 function notify(para,msg,icon="ti-bell"){DB.notifs.unshift({id:nextId(DB.notifs),para,icon,msg,fecha:nowISO(),leida:[]});save();drawBell()}
-const myNotifs=()=>DB.notifs.filter(n=>ME.rol==="ADMIN"||n.para.includes(ME.rol));
+const meKey=()=>ME.rol==="PROVEEDOR"?"PROV:"+ME.provId:ME.rol;
+const myNotifs=()=>DB.notifs.filter(n=>n.para.includes(meKey())||(ME.rol==="ADMIN"&&n.para.some(x=>!x.startsWith("PROV:"))));
 const myPending=()=>APROBADORES.includes(ME.rol)?DB.documentos.filter(d=>{const s=docStatus(d);return d.aprob[ME.rol]?.estado==="PENDIENTE"&&!["RECHAZADO","VENCIDO"].includes(s.k)&&(ME.rol==="DIRECTOR_COMPRAS"||d.aprob.DIRECTOR_COMPRAS?.estado==="APROBADO")}):[];
 function alertas(){const a=[];
  DB.documentos.forEach(d=>{const s=docStatus(d);if(s.k!=="APROBADO"&&s.k!=="VENCIDO")return;const v=vigencia(d);if(v.lvl>0)a.push({lvl:v.lvl,t:catOf(d.cat).nombre,s:prov(d.prov).razon+" · "+v.l,c:v.c,i:v.lvl===4?"ti-file-alert":"ti-clock",pid:d.prov})});
@@ -497,16 +503,16 @@ $("#resetData").onclick=e=>{e.preventDefault();localStorage.removeItem(KEY);DB=n
 $("#loginForm").onsubmit=e=>{e.preventDefault();const m=$("#lgMail").value.trim(),p=$("#lgPass").value;
  if(!/^\S+@\S+\.\S+$/.test(m)){$("#lgErr").textContent="Escribe un correo válido";return}
  if(p.length<4){$("#lgErr").textContent="La contraseña debe tener al menos 4 caracteres";return}
- ME={nombre:DEMO[pickRole][0],rol:pickRole,uid:(DB.usuarios.find(u=>u.correo===DEMO[pickRole][1])||{}).id};$("#meName").textContent=ME.nombre;$("#meRole").textContent=ROLES[ME.rol];$("#meAv").textContent=initials(ME.nombre);
- $("#login").classList.add("hidden");$("#app").classList.remove("hidden");go("dash");drawBell();
+ const U=DB.usuarios.find(u=>u.correo===DEMO[pickRole][1])||{};ME={nombre:DEMO[pickRole][0],rol:pickRole,uid:U.id,provId:U.prov};startSession();
  const pend=myPending().length;toast(`Hola, ${ME.nombre.split(" ")[0]}${pend?` · tienes ${pend} documento(s) por aprobar`:""}`,"ti-hand-stop")};
+$("#regLink").onclick=e=>{e.preventDefault();formRegistro()};
 $("#lgPass").oninput=$("#lgMail").oninput=()=>$("#lgErr").textContent="";
 $("#logout").onclick=()=>{$("#app").classList.add("hidden");$("#login").classList.remove("hidden");closeModal();initLogin()};
 
 /* ======================================================================
    NAVEGACIÓN Y NOTIFICACIONES
    ====================================================================== */
-function drawNav(){const pend=myPending().length,al=alertas().filter(a=>a.lvl>=3).length;
+function drawNav(){if(ME.rol==="PROVEEDOR")return drawNavProv();const pend=myPending().length,al=alertas().filter(a=>a.lvl>=3).length;
  const items=[["sec","General"],["dash","Panel","ti-layout-dashboard"],["prov","Proveedores","ti-building-store"],["nichos","Análisis por nicho","ti-category-2"],["procesos","Procesos de contratación","ti-gavel"],["msgs","Mensajes","ti-messages",unreadMsgs()||null],
   ["sec","Evaluación"],["eval","Evaluaciones","ti-clipboard-check"],["crit","Criterios y perfiles","ti-adjustments-horizontal"],
   ["sec","Control"],["docs","Documentos","ti-file-certificate",pend||al||null],["audit","Trazabilidad","ti-history",null,["ADMIN","AUDITOR"]],["users","Usuarios","ti-users",null,["ADMIN"]]];
@@ -515,17 +521,18 @@ function drawNav(){const pend=myPending().length,al=alertas().filter(a=>a.lvl>=3
 const TITLES={dash:["Panel",""],prov:["Proveedores","Registro, documentación y homologación"],nichos:["Análisis por nicho","Cada proveedor se compara solo con los de su mismo nicho"],
  procesos:["Procesos de contratación","Solicitudes de propuestas de entidades financieras, convocatorias privadas y licitaciones públicas"],eval:["Evaluaciones","Calificación ponderada según el perfil de contratación"],
  crit:["Criterios y perfiles","Criterios y documentos requeridos, preestablecidos y personalizables"],docs:["Documentos","El sistema valida NIT y fechas; si no puede, pasa a aprobación dual (Director de compras → Gerente)"],
- msgs:["Mensajes","Mensajería interna entre los usuarios de EpCore"],audit:["Trazabilidad","Registro de acciones importantes del sistema"],users:["Usuarios","Accesos y roles"]};
-function go(v,opts={}){VIEW=v;ST={...opts};charts.forEach(c=>c.destroy());charts=[];drawNav();
+ msgs:["Mensajes","Mensajería interna entre los usuarios de EpCore"],pinicio:["Portal de proveedores","Tu información, tus documentos y tus procesos en un solo lugar"],pdocs:["Mis documentos","Súbelos tú mismo: EpCore valida NIT y fechas al instante"],pproc:["Procesos y ofertas","Convocatorias abiertas y procesos a los que fuiste invitado"],pemp:["Mi empresa","Datos de registro, estados financieros y experiencia"],audit:["Trazabilidad","Registro de acciones importantes del sistema"],users:["Usuarios","Accesos y roles"]};
+const PV=["pinicio","pdocs","pproc","pemp"];
+function go(v,opts={}){if(ME.rol==="PROVEEDOR"&&!PV.includes(v))v="pinicio";if(ME.rol!=="PROVEEDOR"&&PV.includes(v))v="dash";VIEW=v;ST={...opts};charts.forEach(c=>c.destroy());charts=[];drawNav();
  $("#pgTitle").textContent=TITLES[v][0];$("#pgSub").textContent=v==="dash"?`Hola, ${ME.nombre.split(" ")[0]}. Este es el estado de tus proveedores hoy`:TITLES[v][1];
- ({dash:vDash,prov:vProv,nichos:vNichos,procesos:vProcesos,eval:vEval,crit:vCrit,docs:vDocs,audit:vAudit,users:vUsers,msgs:vMsgs})[v]();window.scrollTo(0,0)}
+ ({dash:vDash,prov:vProv,nichos:vNichos,procesos:vProcesos,eval:vEval,crit:vCrit,docs:vDocs,audit:vAudit,users:vUsers,msgs:vMsgs,pinicio:vPInicio,pdocs:vPDocs,pproc:vPProc,pemp:vPEmp})[v]();window.scrollTo(0,0)}
 function refresh(){const keep={...ST};go(VIEW,keep)}
 $("#gSearch").oninput=e=>{const q=e.target.value.toLowerCase();if(VIEW!=="prov")go("prov",{q});else{ST.q=q;vProv()}$("#gSearch").focus()};
-function drawBell(){const um=unreadMsgs();$("#msgN").textContent=um;$("#msgN").classList.toggle("hidden",!um);const n=myNotifs().filter(x=>!x.leida.includes(ME.rol)).length;$("#bellN").textContent=n;$("#bellN").classList.toggle("hidden",!n)}
+function drawBell(){const um=unreadMsgs();$("#msgN").textContent=um;$("#msgN").classList.toggle("hidden",!um);const n=myNotifs().filter(x=>!x.leida.includes(meKey())).length;$("#bellN").textContent=n;$("#bellN").classList.toggle("hidden",!n)}
 $("#bell").onclick=e=>{e.stopPropagation();const box=$("#notif");box.classList.toggle("hidden");if(box.classList.contains("hidden"))return;
  const L=myNotifs().slice(0,12);
- box.innerHTML=`<div style="padding:8px 10px;font-weight:600;display:flex">Notificaciones<span class="sub" style="margin-left:auto">${ROLES[ME.rol]}</span></div>`+(L.length?L.map(n=>`<div class="it ${n.leida.includes(ME.rol)?"":"new"}"><div class="sq" style="width:32px;height:32px;background:var(--blue-soft);color:var(--blue)"><i class="ti ${n.icon}"></i></div><div>${esc(n.msg)}<br><span class="sub">${new Date(n.fecha).toLocaleString("es-CO",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</span></div></div>`).join(""):'<div class="it">No tienes notificaciones</div>');
- L.forEach(n=>{if(!n.leida.includes(ME.rol))n.leida.push(ME.rol)});save();setTimeout(drawBell,400)};
+ box.innerHTML=`<div style="padding:8px 10px;font-weight:600;display:flex">Notificaciones<span class="sub" style="margin-left:auto">${ROLES[ME.rol]}</span></div>`+(L.length?L.map(n=>`<div class="it ${n.leida.includes(meKey())?"":"new"}"><div class="sq" style="width:32px;height:32px;background:var(--blue-soft);color:var(--blue)"><i class="ti ${n.icon}"></i></div><div>${esc(n.msg)}<br><span class="sub">${new Date(n.fecha).toLocaleString("es-CO",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</span></div></div>`).join(""):'<div class="it">No tienes notificaciones</div>');
+ L.forEach(n=>{if(!n.leida.includes(meKey()))n.leida.push(meKey())});save();setTimeout(drawBell,400)};
 document.addEventListener("click",e=>{if(!e.target.closest("#notif"))$("#notif").classList.add("hidden")});
 
 /* ======================================================================
@@ -695,10 +702,10 @@ function bindFin(pid){if($("#fFin"))$("#fFin").onclick=()=>formFin(pid);if($("#f
 function formFin(pid){const p=prov(pid),f=p.fin||{anio:2025,ac:"",at:"",pc:"",pt:"",uo:"",gi:""};
  modal("Estados financieros · "+p.razon,"ti-report-money",`<div class="form2">${fld("anio","Año fiscal",f.anio,"","number")}<div></div>${fld("ac","Activo corriente (COP)",f.ac,"","number")}${fld("pc","Pasivo corriente (COP)",f.pc,"","number")}${fld("at","Activo total (COP)",f.at,"","number")}${fld("pt","Pasivo total (COP)",f.pt,"","number")}${fld("uo","Utilidad operacional (COP)",f.uo,"","number")}${fld("gi","Gastos de intereses (COP)",f.gi,"","number")}</div><p class="sub">Con estos datos EpCore calcula liquidez, endeudamiento, cobertura de intereses, patrimonio y rentabilidad, como se exige en el RUP y en las solicitudes de propuestas.</p>`,
  ()=>{const v=k=>+$("#f_"+k).value;let ok=true;["ac","pc","at","pt","uo"].forEach(k=>{if(!(v(k)>0)&&k!=="uo"){$("#e_"+k).textContent="Valor obligatorio";ok=false}});if(v("ac")>v("at")){$("#e_ac").textContent="No puede superar el activo total";ok=false}if(v("pc")>v("pt")){$("#e_pc").textContent="No puede superar el pasivo total";ok=false}if(!ok)return false;
-  p.fin={anio:v("anio"),ac:v("ac"),pc:v("pc"),at:v("at"),pt:v("pt"),uo:v("uo"),gi:v("gi")};log(`Actualizó estados financieros de ${p.razon} (${v("anio")})`);save();toast("Estados financieros guardados. Indicadores recalculados","ti-report-money");setTimeout(()=>detalle(pid,"tf"),0)})}
+  p.fin={anio:v("anio"),ac:v("ac"),pc:v("pc"),at:v("at"),pt:v("pt"),uo:v("uo"),gi:v("gi")};log(`Actualizó estados financieros de ${p.razon} (${v("anio")})`);save();toast("Estados financieros guardados. Indicadores recalculados","ti-report-money");setTimeout(()=>ME.rol==="PROVEEDOR"?refresh():detalle(pid,"tf"),0)})}
 function formExp(pid){const p=prov(pid);modal("Agregar contrato · "+p.razon,"ti-briefcase",`<div class="form2">${fld("cliente","Cliente / contratante","","Banco de Occidente")}${fld("unspsc","Código UNSPSC",UNSPSC[p.nicho]||"","76111500")}<div style="grid-column:1/3">${fld("objeto","Objeto del contrato","","Servicio de aseo en 8 sedes")}</div>${fld("valor","Valor ejecutado (COP)","","","number")}${fld("anio","Año de terminación",2025,"","number")}</div>`,
  ()=>{const v=k=>$("#f_"+k).value.trim();let ok=true;["cliente","objeto","unspsc"].forEach(k=>{if(!v(k)){$("#e_"+k).textContent="Obligatorio";ok=false}});if(!(+v("valor")>0)){$("#e_valor").textContent="Indica el valor";ok=false}if(!ok)return false;
-  (p.exp=p.exp||[]).push({cliente:v("cliente"),objeto:v("objeto"),unspsc:v("unspsc"),valor:+v("valor"),anio:+v("anio")});log(`Agregó experiencia a ${p.razon}: ${v("objeto")}`);save();toast("Contrato agregado");setTimeout(()=>detalle(pid,"tf"),0)})}
+  (p.exp=p.exp||[]).push({cliente:v("cliente"),objeto:v("objeto"),unspsc:v("unspsc"),valor:+v("valor"),anio:+v("anio")});log(`Agregó experiencia a ${p.razon}: ${v("objeto")}`);save();toast("Contrato agregado");setTimeout(()=>ME.rol==="PROVEEDOR"?refresh():detalle(pid,"tf"),0)})}
 function consultarSarlaft(pid){const p=prov(pid),hit=p.sarlaft&&p.sarlaft.resultado!=="Sin coincidencias";
  p.sarlaft={fecha:addDays(0),resultado:hit?p.sarlaft.resultado:"Sin coincidencias"};log(`Consultó listas restrictivas de ${p.razon}: ${p.sarlaft.resultado}`);
  if(hit)notify(["DIRECTOR_COMPRAS","GERENTE","ADMIN"],`Alerta SARLAFT: ${p.razon} sigue con coincidencia en listas restrictivas.`,"ti-shield-x");save();toast(hit?"La coincidencia se mantiene. Se alertó a Dirección y Gerencia":"Consulta realizada: sin coincidencias (simulada en el MVP)",hit?"ti-shield-x":"ti-shield-check");detalle(pid,"tf")}
@@ -754,14 +761,14 @@ function procDetalle(id,tab="tr"){const pr=DB.procesos.find(x=>x.id===id),R=pr.r
  if(pr.estado==="PUBLICADO"&&edit)acts.push(`<button class="btn btn-sm" data-a="adenda"><i class="ti ti-file-pencil"></i>Emitir adenda</button><button class="btn btn-sm" data-a="oferta"><i class="ti ti-inbox"></i>Registrar oferta</button><button class="btn btn-sm btn-primary" data-a="cerrar"><i class="ti ti-lock"></i>Cerrar recepción de ofertas</button>`);
  if(pr.estado==="EVALUACION"&&can("ADMIN","GERENTE"))acts.push(E.some(x=>x.c.ok)?`<button class="btn btn-sm btn-ok" data-a="adj"><i class="ti ti-trophy"></i>Adjudicar</button>`:`<button class="btn btn-sm btn-danger" data-a="desierto"><i class="ti ti-circle-off"></i>Declarar desierto</button>`);
  const fac=Object.entries(R.f).filter(([,v])=>v>0);
- modal(pr.nombre,"ti-gavel",`<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">${modPill(pr.perfil)}${nichePill(pr.nicho)}${estPill(pr.estado)}<span class="pill p-gray">${esc(pr.entidad)} · ${esc(pr.codigo)}</span></div>
+ modal(pr.nombre,"ti-gavel",`<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">${modPill(pr.perfil)}${nichePill(pr.nicho)}${estPill(pr.estado)}${visPill(pr)}<span class="pill p-gray">${esc(pr.entidad)} · ${esc(pr.codigo)}</span></div>
   <div class="kv"><div><small>Presupuesto</small><b>${cop(pr.presupuesto)}</b></div><div><small>Cierre de ofertas</small><b>${fdate(pr.cierre)}</b></div><div><small>Ofertas recibidas</small><b>${pr.ofertas.length}</b> · ${E.filter(x=>x.c.ok).length} habilitadas</div></div>
   ${pr.perfil==="PUB"?`<div class="info-box" style="margin-top:12px;background:var(--violet-soft);color:#4C1D95"><i class="ti ti-building-bank" style="font-size:20px"></i><div>En Colombia las entidades públicas deben publicar el proceso oficial en <b>SECOP II</b> (Ley 80/1993, Ley 1150/2007, Decreto 1082/2015). EpCore sirve como herramienta interna para estructurar requisitos, verificar habilitantes y analizar ofertas.</div></div>`:""}
   ${pr.estado==="ADJUDICADO"?`<div class="info-box" style="margin-top:12px;background:var(--green-soft);color:#14532D"><i class="ti ti-trophy" style="font-size:20px"></i><div><b>Adjudicado a ${esc(prov(pr.ganador)?.razon)}</b> por ${esc(pr.adjPor)} el ${fdate(pr.adjFecha)}.</div></div>`:""}
   ${pr.estado==="DESIERTO"?`<div class="info-box" style="margin-top:12px;background:var(--red-soft);color:#881337"><i class="ti ti-circle-off" style="font-size:20px"></i><div><b>Proceso declarado desierto:</b> ninguna oferta cumplió los requisitos habilitantes.</div></div>`:""}
   ${acts.length?`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">${acts.join("")}</div>`:""}
   <div class="tabs"><button data-t="tr">Términos y requisitos</button><button data-t="th2">Habilitación (${nich.filter(x=>x.ok).length}/${nich.length})</button><button data-t="to">Ofertas y evaluación (${pr.ofertas.length})</button><button data-t="ta">Adendas e historial (${pr.adendas.length})</button></div>
-  <div id="tr">
+  <div id="tr">${pr.visibilidad==="INVITACION"?`<p style="font-weight:600;margin:0 0 6px">Proveedores invitados (${pr.invitados.length}) <span class="sub">· solo ellos ven el proceso en el portal</span></p><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">${pr.invitados.map(i=>`<span class="pill p-gray"><i class="ti ti-mail"></i>${esc(prov(i)?.razon||"—")}</span>`).join("")}</div>`:pr.visibilidad==="ABIERTO"?`<p class="sub" style="margin:0 0 12px"><i class="ti ti-world"></i> Convocatoria abierta: todos los proveedores registrados en el portal pueden verla y presentar oferta.</p>`:""}
    <p style="font-weight:600;margin:0 0 6px">Documentos exigidos (${R.docs.length})</p><div style="display:flex;gap:6px;flex-wrap:wrap">${R.docs.map(c=>`<span class="pill p-gray"><i class="ti ti-file-text"></i>${esc(catOf(c).nombre)}</span>`).join("")}</div>
    <div class="grid g3" style="margin-top:16px;gap:10px">
     <div class="kv" style="display:block;margin:0"><div><small>Capacidad financiera</small>Liquidez ≥ <b>${R.liq}</b><br>Endeudamiento ≤ <b>${R.end} %</b><br>Cobertura de intereses ≥ <b>${R.cob}</b>${R.pat?`<br>Patrimonio ≥ <b>${R.pat} %</b> del presupuesto`:""}</div></div>
@@ -772,7 +779,7 @@ function procDetalle(id,tab="tr"){const pr=DB.procesos.find(x=>x.id===id),R=pr.r
   <div id="th2" class="hidden"><p class="sub" style="margin-top:0">Requisitos habilitantes: se cumplen o no se cumplen; no dan puntos. Se revisan todos los proveedores del nicho ${esc(pr.nicho)}.</p>${nich.map(x=>`<div class="check" style="align-items:flex-start"><div class="avatar" style="${avStyle(x.p.nicho)}">${initials(x.p.razon)}</div><div style="flex:1"><b>${esc(x.p.razon)}</b> ${x.ok?'<span class="pill p-ok"><i class="ti ti-circle-check"></i>Habilitado</span>':'<span class="pill p-bad"><i class="ti ti-circle-x"></i>No habilitado</span>'}
     <div style="margin-top:6px;display:grid;gap:3px">${x.ch.map(c=>`<div style="display:flex;gap:6px;font-size:12px;align-items:flex-start"><i class="ti ${c.ok?"ti-check":"ti-x"}" style="color:${c.ok?"#16A34A":"#E11D48"}"></i><span><b style="font-weight:500">${c.g}:</b> ${esc(c.t)}${c.d?` <span class="sub">· ${esc(c.d)}</span>`:""}</span></div>`).join("")}</div></div></div>`).join("")}</div>
   <div id="to" class="hidden">${E.length?`<div class="tbl"><table><thead><tr><th>#</th><th>Proponente</th><th>Oferta</th><th>Plazo</th>${R.f.tecnica?"<th>Técnica</th>":""}<th>Puntaje</th><th>Resultado</th></tr></thead><tbody>
-   ${E.map((x,i)=>`<tr style="${pr.ganador===x.p.id?"background:#F0FDF4":""}"><td>${x.c.ok&&x.total!=null?`<div class="pos ${["gold","silver","bronze"][i]||""}">${i+1}</div>`:"–"}</td><td><b>${esc(x.p.razon)}</b>${x.o.nacional?'<br><span class="pill p-gray">Industria nacional</span>':""}</td><td>${cop(x.o.valor)}</td><td>${x.o.plazo} días</td>
+   ${E.map((x,i)=>`<tr style="${pr.ganador===x.p.id?"background:#F0FDF4":""}"><td>${x.c.ok&&x.total!=null?`<div class="pos ${["gold","silver","bronze"][i]||""}">${i+1}</div>`:"–"}</td><td><b>${esc(x.p.razon)}</b>${x.o.via==="PORTAL"?' <span class="pill p-info" title="Presentada por el proveedor en el portal"><i class="ti ti-world-upload"></i>Portal</span>':""}${x.o.nacional?'<br><span class="pill p-gray">Industria nacional</span>':""}</td><td>${cop(x.o.valor)}</td><td>${x.o.plazo} días</td>
     ${R.f.tecnica?`<td>${pr.estado==="EVALUACION"&&comite&&x.c.ok?`<input class="input" type="number" min="0" max="100" value="${x.o.tecnica??""}" data-tec="${x.o.id}" placeholder="0-100" style="width:84px;height:34px">`:x.o.tecnica??'<span class="sub">Por calificar</span>'}</td>`:""}
     <td>${x.c.ok?(x.total!=null?`<b style="font-size:16px">${x.total.toFixed(1).replace(".",",")}</b><div class="sub">${Object.entries(x.det).map(([k,v])=>`${FACT[k].split(" ")[0]} ${v==null?"—":v.toFixed(1).replace(".",",")}`).join(" · ")}</div>`:'<span class="pill p-warn">Falta calificación técnica</span>'):"—"}</td>
     <td>${pr.ganador===x.p.id?'<span class="pill p-ok"><i class="ti ti-trophy"></i>Adjudicado</span>':x.c.ok?(i===0&&x.total!=null?'<span class="pill p-info"><i class="ti ti-star"></i>Mejor puntaje</span>':'<span class="pill p-ok">Habilitada</span>'):`<span class="pill p-bad">No habilitada</span><div class="sub" style="max-width:260px">${x.c.ch.filter(c=>!c.ok).map(c=>esc(c.t)).join(" · ")}</div>`}</td></tr>`).join("")}</tbody></table></div>`:'<div class="empty"><i class="ti ti-inbox"></i>Aún no hay ofertas registradas</div>'}
@@ -791,25 +798,25 @@ function procAccion(pr,a){const id=pr.id,again=t=>{save();procDetalle(id,t);if(V
  if(a==="enviar"){const s=Object.values(pr.req.f).reduce((x,y)=>x+y,0);if(s!==100){toast(`Los factores de puntaje suman ${s}; deben sumar 100`,"ti-alert-triangle");return}
   pr.estado="APROBACION";pr.aprob={};hist(pr,"Términos enviados a aprobación dual");log(`Envió a aprobación el proceso ${pr.codigo}`);notify(["DIRECTOR_COMPRAS"],`El proceso ${pr.codigo} (${pr.nombre}) espera tu aprobación de términos (1 de 2).`,"ti-gavel");toast("Enviado al Director de compras para aprobación");return again("tr")}
  if(a==="apr"){if(ME.rol==="DIRECTOR_COMPRAS"){pr.aprob.DIRECTOR_COMPRAS="APROBADO";hist(pr,"Términos aprobados por el Director de compras (1/2)");notify(["GERENTE"],`${ME.nombre} aprobó los términos de ${pr.codigo}. Falta tu aprobación como supervisor para publicarlo.`,"ti-signature");toast("Aprobado (1/2). Se notificó al Gerente")}
-  else{pr.aprob.GERENTE="APROBADO";pr.estado="PUBLICADO";hist(pr,"Términos aprobados por el Gerente (2/2). Proceso publicado e invitaciones enviadas");notify(["ANALISTA_COMPRAS","ADMIN"],`El proceso ${pr.codigo} fue aprobado y publicado. Ya puede recibir ofertas.`,"ti-send");toast("Proceso publicado. Ya puede recibir ofertas","ti-send")}
+  else{pr.aprob.GERENTE="APROBADO";pr.estado="PUBLICADO";hist(pr,"Términos aprobados por el Gerente (2/2). Proceso publicado e invitaciones enviadas");if(pr.perfil!=="PUB"){const k=pr.visibilidad==="INVITACION"?pr.invitados.map(i=>"PROV:"+i):DB.proveedores.filter(p=>p.nicho===pr.nicho).map(p=>"PROV:"+p.id);if(k.length)notify(k,pr.visibilidad==="INVITACION"?`${pr.entidad} te invitó a presentar oferta en ${pr.codigo}: ${pr.nombre}. Cierra el ${fdate(pr.cierre)}.`:`Nueva convocatoria abierta en tu nicho: ${pr.codigo} · ${pr.nombre}. Cierra el ${fdate(pr.cierre)}.`,"ti-mail")}notify(["ANALISTA_COMPRAS","ADMIN"],`El proceso ${pr.codigo} fue aprobado y publicado. Ya puede recibir ofertas.`,"ti-send");toast("Proceso publicado. Ya puede recibir ofertas","ti-send")}
   log(`Aprobó términos del proceso ${pr.codigo}`);return again("tr")}
  if(a==="dev")return modal("Devolver términos","ti-arrow-back-up",`<div class="field"><label>Motivo</label><textarea class="input" id="f_mot" placeholder="El patrimonio mínimo es muy alto para el tamaño del contrato"></textarea><span class="err" id="e_mot"></span></div>`,()=>{const m=$("#f_mot").value.trim();if(m.length<10){$("#e_mot").textContent="Explica el motivo";return false}
   pr.estado="BORRADOR";pr.aprob={};hist(pr,`Devuelto a borrador por ${ROLES[ME.rol]}: ${m}`);log(`Devolvió el proceso ${pr.codigo}: ${m}`);notify(["ANALISTA_COMPRAS","ADMIN"],`${ME.nombre} devolvió ${pr.codigo}: ${m}`,"ti-arrow-back-up");save();setTimeout(()=>procDetalle(id),0)},"Devolver");
  if(a==="cerrar")return confirmBox(`¿Cerrar la recepción de ofertas de ${esc(pr.codigo)}?`,`Se recibieron ${pr.ofertas.length} oferta(s). Después no se aceptan más y empieza la evaluación.`,()=>{pr.estado="EVALUACION";hist(pr,`Cierre de recepción con ${pr.ofertas.length} oferta(s)`);log(`Cerró la recepción de ofertas de ${pr.codigo}`);notify(["DIRECTOR_COMPRAS","GERENTE"],`${pr.codigo} pasó a evaluación: registren la calificación técnica.`,"ti-scale");save();setTimeout(()=>procDetalle(id,"to"),0)},"Cerrar recepción");
  if(a==="adj"){const E=evaluarOfertas(pr),top=E.find(x=>x.c.ok);if(!top||top.total==null){toast("Primero registra la calificación técnica de todas las ofertas habilitadas","ti-alert-triangle");return procDetalle(id,"to")}
-  return confirmBox(`¿Adjudicar ${esc(pr.codigo)} a ${esc(top.p.razon)}?`,`Obtuvo el mayor puntaje (${top.total.toFixed(1).replace(".",",")}) entre las ofertas habilitadas. La decisión queda registrada con tu nombre.`,()=>{pr.estado="ADJUDICADO";pr.ganador=top.p.id;pr.adjPor=ME.nombre;pr.adjFecha=addDays(0);hist(pr,`Adjudicado a ${top.p.razon} con ${top.total.toFixed(1)} puntos`);log(`Adjudicó ${pr.codigo} a ${top.p.razon}`);notify(["ANALISTA_COMPRAS","DIRECTOR_COMPRAS","ADMIN"],`${pr.codigo} fue adjudicado a ${top.p.razon}.`,"ti-trophy");save();setTimeout(()=>procDetalle(id,"to"),0)},"Adjudicar")}
- if(a==="desierto")return confirmBox(`¿Declarar desierto ${esc(pr.codigo)}?`,"Ninguna oferta cumplió los requisitos habilitantes.",()=>{pr.estado="DESIERTO";hist(pr,"Proceso declarado desierto");log(`Declaró desierto ${pr.codigo}`);save();setTimeout(()=>procDetalle(id),0)},"Declarar desierto")}
+  return confirmBox(`¿Adjudicar ${esc(pr.codigo)} a ${esc(top.p.razon)}?`,`Obtuvo el mayor puntaje (${top.total.toFixed(1).replace(".",",")}) entre las ofertas habilitadas. La decisión queda registrada con tu nombre.`,()=>{pr.estado="ADJUDICADO";pr.ganador=top.p.id;pr.adjPor=ME.nombre;pr.adjFecha=addDays(0);hist(pr,`Adjudicado a ${top.p.razon} con ${top.total.toFixed(1)} puntos`);log(`Adjudicó ${pr.codigo} a ${top.p.razon}`);notify(["ANALISTA_COMPRAS","DIRECTOR_COMPRAS","ADMIN"],`${pr.codigo} fue adjudicado a ${top.p.razon}.`,"ti-trophy");notify(pr.ofertas.map(o=>"PROV:"+o.prov),`Se publicó el resultado de ${pr.codigo}. Consúltalo en el portal.`,"ti-trophy");save();setTimeout(()=>procDetalle(id,"to"),0)},"Adjudicar")}
+ if(a==="desierto")return confirmBox(`¿Declarar desierto ${esc(pr.codigo)}?`,"Ninguna oferta cumplió los requisitos habilitantes.",()=>{pr.estado="DESIERTO";hist(pr,"Proceso declarado desierto");notify(pr.ofertas.map(o=>"PROV:"+o.prov),`El proceso ${pr.codigo} fue declarado desierto.`,"ti-circle-off");log(`Declaró desierto ${pr.codigo}`);save();setTimeout(()=>procDetalle(id),0)},"Declarar desierto")}
 function vProcesosSilent(){const m=$("#modalRoot").innerHTML;vProcesos();$("#modalRoot").innerHTML=m}
 
 /* ---------- Crear proceso, ajustar requisitos y adendas ---------- */
-function formProc(){modal("Nuevo proceso de contratación","ti-gavel",`<div class="form2">${sel("perfil","Modalidad",DB.perfiles.map(p=>[p.id,modLabel(p.id)]))}${sel("nicho","Nicho",NICHOS.map(n=>n.id))}
+function formProc(){modal("Nuevo proceso de contratación","ti-gavel",`<div class="form2">${sel("perfil","Modalidad",DB.perfiles.map(p=>[p.id,modLabel(p.id)]))}${sel("nicho","Nicho",NICHOS.map(n=>n.id))}${sel("vis","Publicación en el portal de proveedores",[["INVITACION","Por invitación (proveedores del nicho y la modalidad)"],["ABIERTO","Convocatoria abierta a todos los registrados"]])}<div class="sub" style="align-self:center">En licitación pública el proceso oficial se publica en SECOP II.</div>
   <div style="grid-column:1/3">${fld("nombre","Objeto del proceso","","Servicio de aseo y cafetería para 12 oficinas")}</div>${fld("entidad","Entidad contratante o área solicitante","","Banco Cafetero de Colombia")}${fld("codigo","Código del proceso","","RFP-BC-2026-031")}
   ${fld("presupuesto","Presupuesto (COP)","","","number")}${fld("cierre","Fecha de cierre de ofertas",addDays(15),"","date")}</div>
   <div class="info-box"><i class="ti ti-template" style="font-size:20px"></i><div>El proceso se crea como <b>borrador</b> con la plantilla de requisitos de la modalidad elegida. Luego puedes ajustarlos a lo que pida el cliente antes de enviarlo a aprobación.</div></div>`,
  ()=>{const v=k=>$("#f_"+k).value.trim();let ok=true;["nombre","entidad","codigo"].forEach(k=>{if(!v(k)){$("#e_"+k).textContent="Campo obligatorio";ok=false}});
   if(DB.procesos.some(p=>p.codigo===v("codigo"))){$("#e_codigo").textContent="Ya existe un proceso con ese código";ok=false}
   if(!(+v("presupuesto")>0)){$("#e_presupuesto").textContent="Indica el presupuesto";ok=false}if(daysTo(v("cierre"))<1){$("#e_cierre").textContent="Debe ser una fecha futura";ok=false}if(!ok)return false;
-  const pr={id:nextId(DB.procesos),perfil:v("perfil"),nicho:v("nicho"),nombre:v("nombre"),entidad:v("entidad"),codigo:v("codigo"),presupuesto:+v("presupuesto"),cierre:v("cierre"),estado:"BORRADOR",req:plantilla(v("perfil"),v("nicho")),ofertas:[],adendas:[],hist:[],aprob:{}};
+  const pr={id:nextId(DB.procesos),perfil:v("perfil"),nicho:v("nicho"),nombre:v("nombre"),entidad:v("entidad"),codigo:v("codigo"),presupuesto:+v("presupuesto"),cierre:v("cierre"),estado:"BORRADOR",visibilidad:v("perfil")==="PUB"?"SECOP":v("vis"),invitados:v("perfil")!=="PUB"&&v("vis")==="INVITACION"?DB.proveedores.filter(p=>p.nicho===v("nicho")&&p.modalidades.includes(v("perfil"))).map(p=>p.id):[],req:plantilla(v("perfil"),v("nicho")),ofertas:[],adendas:[],hist:[],aprob:{}};
   hist(pr,"Proceso creado con la plantilla «"+modLabel(pr.perfil)+"»");DB.procesos.unshift(pr);log("Creó el proceso "+pr.codigo);save();vProcesos();setTimeout(()=>procDetalle(pr.id),0)},"Crear borrador")}
 function formReq(id,adenda){const pr=DB.procesos.find(x=>x.id===id),R=pr.req,pub=pr.perfil==="PUB";
  const cats=DB.catalogo.filter(c=>c.activo&&(!c.nichos||c.nichos.includes(pr.nicho)));
@@ -832,7 +839,7 @@ function formReq(id,adenda){const pr=DB.procesos.find(x=>x.id===id),R=pr.req,pub
   if(adenda){const just=$("#f_just").value.trim(),nc=$("#f_cierre").value;if(nc!==pr.cierre){if(daysTo(nc)<1){$("#e_cierre").textContent="Debe ser futura";return false}cambios.push(`Cierre: ${fdate(pr.cierre)} → ${fdate(nc)}`);pr.cierre=nc}
    if(just.length<15){$("#e_just").textContent="Explica la justificación (mínimo 15 caracteres)";return false}if(!cambios.length){$("#e_req").textContent="La adenda no tiene cambios";return false}
    pr.adendas.push({n:pr.adendas.length+1,fecha:addDays(0),por:ME.nombre,just,cambios});hist(pr,`Adenda No. ${pr.adendas.length}: ${cambios.length} cambio(s)`);log(`Emitió la adenda ${pr.adendas.length} del proceso ${pr.codigo}`);
-   notify(["DIRECTOR_COMPRAS","GERENTE","ADMIN"],`Se emitió la adenda No. ${pr.adendas.length} del proceso ${pr.codigo}: ${just}`,"ti-file-pencil")}
+   notify(["DIRECTOR_COMPRAS","GERENTE","ADMIN"],`Se emitió la adenda No. ${pr.adendas.length} del proceso ${pr.codigo}: ${just}`,"ti-file-pencil");const pk=provKeys(pr);if(pk.length)notify(pk,`Adenda No. ${pr.adendas.length} en ${pr.codigo}: ${just}`,"ti-file-pencil")}
   else if(cambios.length){hist(pr,`Requisitos ajustados: ${cambios.length} cambio(s)`);log(`Ajustó requisitos de ${pr.codigo}`)}
   pr.req=N;save();toast(adenda?"Adenda emitida. Habilitación recalculada":"Requisitos guardados","ti-check");setTimeout(()=>procDetalle(id,adenda?"ta":"tr"),0)},adenda?"Emitir adenda":"Guardar requisitos");
  const upd=()=>{const s=[...document.querySelectorAll(".rf")].reduce((a,i)=>a+(+i.value||0),0);$("#fsum").textContent=`· suman ${s} de 100`;$("#fsum").style.color=s===100?"#16A34A":"#E11D48"};
@@ -965,7 +972,7 @@ function docDetalle(id){const d=DB.documentos.find(x=>x.id===id),p=prov(d.prov),
   :`<div class="info-box" style="margin-top:12px;background:var(--amber-soft);color:#78350F"><i class="ti ti-users-group" style="font-size:20px"></i><div><b>Requiere aprobación dual.</b> El sistema no pudo validarlo por sí solo. Para evitar conflictos de interés o favorecer a una empresa que no cumple, deben aprobarlo dos personas en orden: el Director de compras y luego el Gerente como supervisor.</div></div>
   <div style="display:flex;gap:8px;margin-bottom:14px">${apprChips(d,true)}</div>`}
   <p style="font-weight:600">Historial</p><div class="timeline">${ev.map(e=>`<div><b>${fdate(e[0])}</b> · ${esc(e[1])}</div>`).join("")}</div>`,null)}
-function formDoc(pid){const ps=DB.proveedores,first=pid||ps[0].id;
+function formDoc(pid,catId){const pv=ME.rol==="PROVEEDOR",ps=pv?[prov(ME.provId)]:DB.proveedores,first=pv?ME.provId:pid||ps[0].id;
  modal("Cargar y digitalizar documento","ti-upload",`<div class="form2">${sel("prov","Proveedor",ps.map(p=>[p.id,p.razon]),first)}<div class="field"><label>Tipo de documento</label><select class="input" id="f_cat"></select><span class="err"></span></div>${fld("exp","Fecha de expedición",addDays(-3),"","date")}${fld("ven","Fecha de vencimiento",addDays(365),"","date")}</div>
   <input type="file" id="f_file" accept=".pdf,.png,.jpg,.jpeg" class="hidden"><div class="drop" id="drop"><i class="ti ti-cloud-upload" style="font-size:34px;color:var(--blue)"></i><br><b style="color:var(--text)">Selecciona o arrastra el archivo</b><br><small>PDF, JPG o PNG · máximo 10 MB</small></div><span class="err" id="e_file"></span>
   <div id="lectura"></div>
@@ -980,13 +987,13 @@ function formDoc(pid){const ps=DB.proveedores,first=pid||ps[0].id;
   if(!ok)return false;
   let h="no-disponible";try{const buf=await f.arrayBuffer(),dg=await crypto.subtle.digest("SHA-256",buf);h=[...new Uint8Array(dg)].map(b=>b.toString(16).padStart(2,"0")).join("")}catch(e){}
   const p=prov(+$("#f_prov").value),lect=window._lect&&window._lect.f===f?window._lect.r:await leerArchivo(f),val=validarDocumento(lect,p,c,exp,ven),auto=val.tipo==="AUTO";
-  DB.documentos.push({id:nextId(DB.documentos),prov:p.id,cat:c.id,expedido:exp,vence:ven,archivo:f.name,tam:Math.max(1,Math.round(f.size/1024)),hash:h,cargadoPor:ME.nombre,cargado:addDays(0),validacion:{tipo:val.tipo,checks:val.checks,motivo:val.motivo},
+  DB.documentos.push({id:nextId(DB.documentos),prov:p.id,cat:c.id,expedido:exp,vence:ven,archivo:f.name,tam:Math.max(1,Math.round(f.size/1024)),hash:h,cargadoPor:ME.rol==="PROVEEDOR"?ME.nombre+" · "+prov(ME.provId).razon+" (portal)":ME.nombre,via:ME.rol==="PROVEEDOR"?"PORTAL":"INTERNO",cargado:addDays(0),validacion:{tipo:val.tipo,checks:val.checks,motivo:val.motivo},
    aprob:auto?{}:{DIRECTOR_COMPRAS:{estado:"PENDIENTE"},GERENTE:{estado:"PENDIENTE"}}});
   if(auto){log(`Cargó «${c.nombre}» de ${p.razon}: aprobado automáticamente (NIT y fechas verificados)`);notify(["ANALISTA_COMPRAS","ADMIN"],`«${c.nombre}» de ${p.razon} fue aprobado por el sistema: NIT y fechas verificados.`,"ti-robot");save();toast(`Aprobado por el sistema · ${p.razon}: ${homolog(p).l}`,"ti-robot")}
   else{log(`Cargó «${c.nombre}» de ${p.razon}: requiere aprobación dual (${val.motivo})`);notify(["DIRECTOR_COMPRAS"],`${ME.nombre} cargó «${c.nombre}» de ${p.razon}. El sistema no pudo validarlo: requiere tu revisión (1 de 2).`,"ti-file-upload");save();toast("El sistema no pudo validarlo. Pasa a aprobación dual: se notificó al Director de compras","ti-users-group")}
   refresh()},"Cargar documento");
  const fillCat=()=>{const p=prov(+$("#f_prov").value),R=reqDocs(p);$("#f_cat").innerHTML=R.map(c=>{const s=docStatus(docOf(p,c.id));return`<option value="${c.id}">${esc(c.nombre)} — ${s.l}</option>`}).join("")};
- $("#f_prov").onchange=fillCat;fillCat();
+ $("#f_prov").onchange=fillCat;fillCat();if(catId)$("#f_cat").value=catId;
  $("#drop").onclick=()=>$("#f_file").click();
  $("#drop").ondragover=e=>{e.preventDefault();$("#drop").style.borderColor="var(--blue)"};
  $("#drop").ondrop=e=>{e.preventDefault();$("#f_file").files=e.dataTransfer.files;$("#f_file").onchange()};
@@ -1000,6 +1007,149 @@ function formDoc(pid){const ps=DB.proveedores,first=pid||ps[0].id;
    <div style="margin-top:6px">${v.checks.map(x=>`<div style="display:flex;gap:6px;align-items:flex-start;font-size:12px"><i class="ti ${x.ok?"ti-check":"ti-x"}" style="color:${x.ok?"#16A34A":"#E11D48"}"></i><span>${esc(x.t)}${x.d?` · ${esc(x.d)}`:""}</span></div>`).join("")}</div></div></div>`};
  $("#f_file").onchange=()=>{const f=$("#f_file").files[0];if(f){$("#e_file").textContent="";$("#drop").innerHTML=`<i class="ti ti-file-check" style="font-size:34px;color:var(--green)"></i><br><b style="color:var(--text)">${esc(f.name)}</b><br><small>${Math.round(f.size/1024)} KB · clic para cambiar</small>`;analizar()}};
  ["f_prov","f_cat","f_exp","f_ven"].forEach(k=>$("#"+k).addEventListener("change",()=>{if($("#f_file").files[0]&&k!=="f_exp"&&k!=="f_ven")analizar()}))}
+
+/* ======================================================================
+   PORTAL DE PROVEEDORES (modelo mixto)
+   El proveedor se registra, sube sus documentos y presenta ofertas.
+   La evaluación, la aprobación dual, el SARLAFT y la adjudicación
+   siguen siendo internos del comprador.
+   ====================================================================== */
+function startSession(){const pv=ME.rol==="PROVEEDOR";
+ $("#meName").textContent=ME.nombre;$("#meRole").textContent=pv?prov(ME.provId).razon:ROLES[ME.rol];$("#meAv").textContent=initials(ME.nombre);
+ $(".search").classList.toggle("hidden",pv);$("#msgBtn").classList.toggle("hidden",pv);
+ $("#login").classList.add("hidden");$("#app").classList.remove("hidden");closeModal();go(pv?"pinicio":"dash");drawBell()}
+const myProv=()=>prov(ME.provId);
+const visPill=pr=>pr.perfil==="PUB"||pr.visibilidad==="SECOP"?'<span class="pill p-violet"><i class="ti ti-world"></i>Publicado en SECOP II</span>':pr.visibilidad==="INVITACION"?`<span class="pill p-gray"><i class="ti ti-mail"></i>Por invitación (${(pr.invitados||[]).length})</span>`:'<span class="pill p-info"><i class="ti ti-world"></i>Convocatoria abierta</span>';
+/* Regla de acceso: un proveedor solo ve procesos publicados que son abiertos,
+   públicos (SECOP) o a los que fue invitado. Nunca ve borradores. */
+function visibleParaProv(pr,pid){if(["BORRADOR","APROBACION"].includes(pr.estado))return false;
+ if(pr.perfil==="PUB"||pr.visibilidad==="ABIERTO")return true;return(pr.invitados||[]).includes(pid)}
+const provKeys=pr=>DB.proveedores.filter(p=>visibleParaProv(pr,p.id)&&(pr.visibilidad!=="ABIERTO"||p.nicho===pr.nicho||pr.ofertas.some(o=>o.prov===p.id))).map(p=>"PROV:"+p.id);
+/* El proveedor no ve quién revisa internamente sus documentos */
+function provDocStatus(d){const s=docStatus(d);
+ if(s.k==="PENDIENTE"||s.k==="EN_APROBACION")return{...s,l:"En revisión por el comprador",c:"p-info",i:"ti-file-dots"};
+ if(s.k==="APROBADO")return{...s,l:s.auto?"Aprobado (validación automática)":"Aprobado"};return s}
+const motivoRechazo=d=>d?Object.values(d.aprob).find(x=>x.estado==="RECHAZADO")?.motivo:"";
+function dvNit(n){const W=[3,7,13,17,19,23,29,37,41,43,47,53,59,67,71],s=[...n].reverse().reduce((a,d,i)=>a+(+d)*W[i],0)%11;return s<2?s:11-s}
+
+function drawNavProv(){const p=myProv(),c=cumplimiento(p),corr=c.faltantes.length+c.rechazados.length+c.vencidos.length,
+ inv=DB.procesos.filter(pr=>pr.estado==="PUBLICADO"&&pr.perfil!=="PUB"&&visibleParaProv(pr,p.id)&&!pr.ofertas.some(o=>o.prov===p.id)).length;
+ const items=[["sec","Portal de proveedores"],["pinicio","Inicio","ti-home"],["pdocs","Mis documentos","ti-files",corr||null],["pproc","Procesos y ofertas","ti-gavel",inv||null],["pemp","Mi empresa","ti-building"]];
+ $("#nav").innerHTML=items.map(i=>i[0]==="sec"?`<div class="nav-sec">${i[1]}</div>`:`<a data-v="${i[0]}" class="${VIEW===i[0]?"on":""}"><i class="ti ${i[2]}"></i>${i[1]}${i[3]?`<span class="count">${i[3]}</span>`:""}</a>`).join("")
+  +`<div style="margin:18px 6px 0;padding:12px;border-radius:12px;background:var(--navy-2);font-size:12px;line-height:1.5"><i class="ti ti-lock" style="color:#5EEAD4"></i> Solo ves la información de <b style="color:#fff">${esc(p.razon)}</b>. Las evaluaciones internas, las ofertas de otros proponentes y la consulta SARLAFT son confidenciales.</div>`;
+ document.querySelectorAll("#nav a").forEach(a=>a.onclick=()=>go(a.dataset.v))}
+
+function vPInicio(){const p=myProv(),c=cumplimiento(p),procs=DB.procesos.filter(pr=>visibleParaProv(pr,p.id)),
+ abiertos=procs.filter(pr=>pr.estado==="PUBLICADO"),ofertas=procs.filter(pr=>pr.ofertas.some(o=>o.prov===p.id));
+ const pend=[...c.rechazados.map(x=>({c:x,t:"Rechazado",m:motivoRechazo(docOf(p,x.id))||"Revisa el documento y súbelo de nuevo",cl:"p-bad",i:"ti-file-x"})),
+  ...c.vencidos.map(x=>({c:x,t:"Vencido",m:"Sube una versión vigente",cl:"p-bad",i:"ti-file-alert"})),
+  ...c.faltantes.map(x=>({c:x,t:"Falta",m:x.desc||"Documento exigido para tu actividad",cl:"p-warn",i:"ti-file-off"})),
+  ...c.items.filter(x=>x.s.k==="APROBADO"&&daysTo(x.d.vence)<=30).map(x=>({c:x.c,t:`Vence en ${daysTo(x.d.vence)} d`,m:"Actualízalo antes de que venza",cl:"p-info",i:"ti-clock"}))];
+ $("#view").innerHTML=`<div class="card hero"><div class="avatar" style="width:54px;height:54px;font-size:18px;${avStyle(p.nicho)}">${initials(p.razon)}</div><div><h2>${esc(p.razon)}</h2><p>NIT ${esc(p.nit)} · ${esc(p.nicho)} · ${esc(p.ciudad)}</p></div>${abiertos.length?`<button class="btn" id="goProc"><i class="ti ti-gavel"></i>Ver procesos abiertos (${abiertos.length})</button>`:""}</div>
+ <div class="grid g4" style="margin-bottom:16px">${kpi("Documentación",c.pct+" %",c.nivel.l,"ti-file-certificate",c.nivel.col,c.nivel.col+"1A")}${kpi("Por corregir",pend.filter(x=>x.cl!=="p-info").length,"Faltantes, vencidos o rechazados","ti-alert-triangle","#E11D48","#FDE8EE")}${kpi("Procesos abiertos",abiertos.length,"Abiertos o con invitación para ti","ti-gavel","#7C3AED","#F1EBFE")}${kpi("Ofertas presentadas",ofertas.length,"En todos los procesos","ti-send","#2563EB","#E8F0FE")}</div>
+ <div class="grid g-2-1"><div class="card"><div class="card-h"><h3>Lo que necesitas hacer</h3><a id="goDocs">Ir a mis documentos</a></div>
+  ${pend.length?pend.map(x=>`<div class="row"><div class="sq ${x.cl}"><i class="ti ${x.i}"></i></div><div style="flex:1"><b>${esc(x.c.nombre)}</b> <span class="pill ${x.cl}">${x.t}</span><br><span class="sub">${esc(x.m)}</span></div><button class="btn btn-sm btn-primary" data-up="${x.c.id}"><i class="ti ti-upload"></i>Subir</button></div>`).join("")
+   :'<div class="empty"><i class="ti ti-circle-check" style="color:var(--green)"></i>Tu documentación está al día</div>'}</div>
+ <div class="card"><div class="card-h"><h3>Procesos para ti</h3><a id="goProc2">Ver todos</a></div>${abiertos.length?abiertos.map(pr=>{const mia=pr.ofertas.find(o=>o.prov===p.id);return`<div class="row" style="cursor:pointer" data-pp="${pr.id}"><div class="sq" style="background:var(--violet-soft);color:var(--violet)"><i class="ti ti-gavel"></i></div><div style="flex:1;min-width:0"><b>${esc(pr.codigo)}</b><br><span class="sub">${esc(pr.entidad)} · cierra el ${fdate(pr.cierre)}</span></div>${mia?'<span class="pill p-ok">Oferta enviada</span>':pr.perfil==="PUB"?'<span class="pill p-violet">SECOP II</span>':'<span class="pill p-warn">Sin oferta</span>'}</div>`}).join(""):'<div class="empty">No tienes procesos abiertos en este momento</div>'}</div></div>`;
+ document.querySelectorAll("[data-up]").forEach(b=>b.onclick=()=>formDoc(null,b.dataset.up));
+ document.querySelectorAll("[data-pp]").forEach(b=>b.onclick=()=>provProcDetalle(+b.dataset.pp));
+ ["goProc","goProc2"].forEach(k=>{if($("#"+k))$("#"+k).onclick=()=>go("pproc")});$("#goDocs").onclick=()=>go("pdocs")}
+
+function vPDocs(){const p=myProv(),c=cumplimiento(p);
+ $("#view").innerHTML=`<div class="info-box"><i class="ti ti-robot" style="font-size:20px"></i><div>Sube tus documentos en PDF. EpCore lee el archivo y verifica que <b>tu NIT</b> y <b>las fechas</b> coincidan: si todo cumple, queda <b>aprobado al instante</b>. Si no puede leerlo (por ejemplo, una imagen escaneada), pasa a <b>revisión del comprador</b>. Cada archivo queda con fecha, hora y huella digital, así que nadie puede cambiarlo después.</div></div>
+ <div class="card"><div class="toolbar"><b style="font-size:15px">${c.req} documentos exigidos para ${esc(p.nicho)}</b><span class="pill ${c.nivel.c}">${c.nivel.l} · ${c.pct} %</span><div style="margin-left:auto"><button class="btn btn-primary btn-sm" id="upAny"><i class="ti ti-upload"></i>Subir documento</button></div></div>
+ <div class="tbl"><table><thead><tr><th>Documento</th><th>Estado</th><th>Vigencia</th><th>Archivo</th><th></th></tr></thead><tbody>
+ ${c.items.map(({c:k,d})=>{const s=provDocStatus(d),v=d?vigencia(d):null,mot=motivoRechazo(d);return`<tr><td><b>${esc(k.nombre)}</b>${k.maxDias?`<br><span class="sub">Expedido con máximo ${k.maxDias} días</span>`:k.desc?`<br><span class="sub">${esc(k.desc)}</span>`:""}</td>
+  <td><span class="pill ${s.c}"><i class="ti ${s.i}"></i>${s.l}</span>${mot?`<div class="sub" style="max-width:260px;margin-top:4px;color:#9F1239">Motivo: ${esc(mot)}</div>`:""}</td>
+  <td>${v?`<span class="pill ${v.c}">${v.l}</span><br><span class="sub">${fdate(d.vence)}</span>`:"—"}</td><td>${d?`<span style="font-size:13px">${esc(d.archivo)}</span><br><span class="sub">Subido el ${fdate(d.cargado)}</span>`:'<span class="sub">Sin cargar</span>'}</td>
+  <td><div class="actions"><button class="btn btn-sm ${!d||["RECHAZADO","VENCIDO"].includes(s.k)?"btn-primary":""}" data-up="${k.id}"><i class="ti ti-upload"></i>${d?"Actualizar":"Subir"}</button></div></td></tr>`}).join("")}</tbody></table></div></div>`;
+ $("#upAny").onclick=()=>formDoc();document.querySelectorAll("[data-up]").forEach(b=>b.onclick=()=>formDoc(null,b.dataset.up))}
+
+function vPProc(){const p=myProv(),L=DB.procesos.filter(pr=>visibleParaProv(pr,p.id));
+ $("#view").innerHTML=`<div class="info-box"><i class="ti ti-gavel" style="font-size:20px"></i><div>Aquí ves las <b>convocatorias abiertas</b> y los procesos a los que <b>fuiste invitado</b>. Tu oferta es <b>confidencial</b>: los demás proponentes no la ven. Puedes reemplazarla hasta la fecha de cierre. Los procesos de entidades públicas se presentan en <b>SECOP II</b>.</div></div>
+ <div class="grid g2">${L.map(pr=>{const mia=pr.ofertas.find(o=>o.prov===p.id),d=daysTo(pr.cierre),res=resultadoProv(pr,p);
+  return`<div class="card" style="cursor:pointer" data-pp="${pr.id}"><div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">${modPill(pr.perfil)}${nichePill(pr.nicho)}${visPill(pr)}</div>
+   <h3 style="margin:0 0 4px;font-size:16px">${esc(pr.nombre)}</h3><span class="sub">${esc(pr.entidad)} · ${esc(pr.codigo)}</span>
+   <div style="display:flex;gap:18px;margin-top:14px;align-items:flex-end;flex-wrap:wrap"><div><span class="sub">Presupuesto</span><br><b>${cop(pr.presupuesto)}</b></div><div><span class="sub">Cierre</span><br><b style="color:${pr.estado==="PUBLICADO"&&d<=7?"#B45309":"inherit"}">${fdate(pr.cierre)}</b></div>
+   <div style="margin-left:auto">${res?`<span class="pill ${res.c}"><i class="ti ${res.i}"></i>${res.l}</span>`:mia?'<span class="pill p-ok"><i class="ti ti-send"></i>Oferta enviada</span>':pr.estado==="PUBLICADO"?(pr.perfil==="PUB"?'<span class="pill p-violet">Se presenta en SECOP II</span>':'<span class="pill p-warn"><i class="ti ti-clock"></i>Pendiente tu oferta</span>'):`<span class="pill p-gray">${ESTADOS[pr.estado][0]}</span>`}</div></div></div>`}).join("")||'<div class="empty"><i class="ti ti-gavel"></i>No hay procesos disponibles para ti</div>'}</div>`;
+ document.querySelectorAll("[data-pp]").forEach(b=>b.onclick=()=>provProcDetalle(+b.dataset.pp))}
+
+/* El proveedor solo conoce su propio resultado */
+function resultadoProv(pr,p){if(!pr.ofertas.some(o=>o.prov===p.id))return null;
+ if(pr.estado==="ADJUDICADO")return pr.ganador===p.id?{l:"Adjudicado a tu empresa",c:"p-ok",i:"ti-trophy"}:{l:"No adjudicado",c:"p-gray",i:"ti-circle-x"};
+ if(pr.estado==="DESIERTO")return{l:"Declarado desierto",c:"p-bad",i:"ti-circle-off"};
+ if(pr.estado==="EVALUACION")return{l:"En evaluación",c:"p-info",i:"ti-scale"};return null}
+
+function provProcDetalle(id){const pr=DB.procesos.find(x=>x.id===id),p=myProv();
+ if(!pr||!visibleParaProv(pr,p.id)){toast("No tienes acceso a este proceso","ti-lock");return}
+ const R=pr.req,mia=pr.ofertas.find(o=>o.prov===p.id),chk=checkProc(p,pr).ch.filter(x=>x.g!=="Riesgo"),abierto=pr.estado==="PUBLICADO"&&daysTo(pr.cierre)>=0,res=resultadoProv(pr,p),fac=Object.entries(R.f).filter(([,v])=>v>0);
+ modal(pr.nombre,"ti-gavel",`<div style="display:flex;gap:6px;flex-wrap:wrap">${modPill(pr.perfil)}${nichePill(pr.nicho)}${visPill(pr)}<span class="pill p-gray">${esc(pr.entidad)} · ${esc(pr.codigo)}</span></div>
+  <div class="kv"><div><small>Presupuesto oficial</small><b>${cop(pr.presupuesto)}</b></div><div><small>Cierre de ofertas</small><b>${fdate(pr.cierre)}</b>${abierto?` · faltan ${daysTo(pr.cierre)} d`:""}</div><div><small>Estado</small><b>${ESTADOS[pr.estado][0]}</b></div></div>
+  ${pr.perfil==="PUB"?`<div class="info-box" style="margin-top:12px;background:var(--violet-soft);color:#4C1D95"><i class="ti ti-building-community" style="font-size:20px"></i><div>Es un proceso de una <b>entidad pública</b>. La oferta oficial se presenta en <b>SECOP II</b>. En EpCore puedes revisar si cumples los requisitos y mantener tus documentos al día.</div></div>`:""}
+  ${mia?`<div class="info-box" style="margin-top:12px;background:var(--green-soft);color:#14532D"><i class="ti ti-send" style="font-size:20px"></i><div><b>Tu oferta:</b> ${cop(mia.valor)} · plazo ${mia.plazo} días · enviada el ${fdate(mia.fecha)}.<br>Es confidencial: los demás proponentes no la ven.${res?` <b>Resultado: ${res.l}.</b>`:""}</div></div>`:""}
+  ${abierto&&pr.perfil!=="PUB"?`<div style="display:flex;gap:8px;margin-top:14px"><button class="btn btn-primary" id="pOferta"><i class="ti ti-send"></i>${mia?"Reemplazar oferta":"Presentar oferta"}</button></div>`:""}
+  <p style="font-weight:600;margin:18px 0 6px">¿Cumples los requisitos? <span class="sub">· revisión previa con tus datos de hoy</span></p>
+  ${chk.map(c=>`<div style="display:flex;gap:8px;font-size:13px;padding:5px 0;align-items:flex-start"><i class="ti ${c.ok?"ti-circle-check":"ti-circle-x"}" style="color:${c.ok?"#16A34A":"#E11D48"};font-size:17px"></i><span><b style="font-weight:500">${c.g}:</b> ${esc(c.t)}${c.d?` <span class="sub">· ${esc(c.d)}</span>`:""}</span></div>`).join("")}
+  ${R.sarlaft?'<p class="sub"><i class="ti ti-shield-lock"></i> El comprador también verifica a tu empresa en listas restrictivas (SARLAFT). Esa consulta es confidencial.</p>':""}
+  <p style="font-weight:600;margin:16px 0 6px">Cómo se califican las ofertas (100 puntos)</p>${fac.map(([k,v])=>`<div style="display:flex;gap:10px;align-items:center;margin-bottom:6px"><span style="width:290px;font-size:13px">${FACT[k]}</span><div class="bar" style="flex:1"><i style="width:${v}%;background:var(--violet)"></i></div><b style="width:42px;text-align:right">${v}</b></div>`).join("")}
+  <p style="font-weight:600;margin:16px 0 6px">Adendas (${pr.adendas.length})</p>${pr.adendas.length?pr.adendas.map(a=>`<div class="check"><div class="sq p-violet"><i class="ti ti-file-pencil"></i></div><div><b>Adenda No. ${a.n}</b> · ${fdate(a.fecha)}<br><span style="font-size:13px">${esc(a.just)}</span><ul style="margin:6px 0 0;padding-left:18px;font-size:13px;color:#475569">${a.cambios.map(c=>`<li>${esc(c)}</li>`).join("")}</ul></div></div>`).join(""):'<p class="sub">Sin adendas.</p>'}`,null,"",true);
+ if($("#pOferta"))$("#pOferta").onclick=()=>provOferta(id)}
+
+function provOferta(id){const pr=DB.procesos.find(x=>x.id===id),p=myProv(),prev=pr.ofertas.find(o=>o.prov===p.id),falla=checkProc(p,pr).ch.filter(x=>x.g!=="Riesgo"&&!x.ok);
+ if(!visibleParaProv(pr,p.id)||pr.estado!=="PUBLICADO"||daysTo(pr.cierre)<0){toast("El proceso ya no recibe ofertas","ti-lock");return}
+ modal((prev?"Reemplazar oferta · ":"Presentar oferta · ")+pr.codigo,"ti-send",`${falla.length?`<div class="info-box" style="background:var(--amber-soft);color:#78350F"><i class="ti ti-alert-triangle" style="font-size:20px"></i><div>Puedes enviar la oferta, pero <b>hoy no cumples</b> estos requisitos. Corrígelos antes del cierre (${fdate(pr.cierre)}) o tu oferta no será habilitada:<ul style="margin:6px 0 0;padding-left:18px">${falla.map(x=>`<li>${esc(x.t)}</li>`).join("")}</ul></div></div>`:`<div class="info-box" style="background:var(--green-soft);color:#14532D"><i class="ti ti-circle-check" style="font-size:20px"></i><div>Según tus datos de hoy cumples los requisitos habilitantes. El comprador hará la verificación final.</div></div>`}
+  <div class="form2">${fld("valor","Valor ofertado (COP, IVA incluido)",prev?.valor||"","","number")}${fld("plazo","Plazo de inicio o entrega (días)",prev?.plazo||"","","number")}</div>
+  <label style="display:flex;gap:8px;font-size:13px;align-items:flex-start"><input type="checkbox" id="f_decl" style="margin-top:3px"><span>Declaro bajo la gravedad de juramento que la información es veraz y que no tengo vínculos ni conflicto de interés con empleados o directivos de ${esc(pr.entidad)}.</span></label><span class="err" id="e_decl"></span>`,
+ ()=>{const valor=+$("#f_valor").value,plazo=+$("#f_plazo").value;let ok=true;
+  if(!(valor>0)){$("#e_valor").textContent="Indica el valor";ok=false}else if(valor>pr.presupuesto){$("#e_valor").textContent=`Supera el presupuesto oficial (${cop(pr.presupuesto)})`;ok=false}
+  if(!(plazo>0)){$("#e_plazo").textContent="Indica el plazo";ok=false}
+  if(!$("#f_decl").checked){$("#e_decl").textContent="Debes aceptar la declaración";ok=false}
+  if(daysTo(pr.cierre)<0){$("#e_decl").textContent="El proceso ya cerró";ok=false}if(!ok)return false;
+  if(prev)pr.ofertas=pr.ofertas.filter(o=>o!==prev);
+  pr.ofertas.push({id:nextId(pr.ofertas),prov:p.id,valor,plazo,tecnica:null,fecha:addDays(0),hora:localNow(),via:"PORTAL",declaracion:true});
+  hist(pr,`${prev?"Oferta reemplazada":"Oferta recibida"} por el portal: ${p.razon}`);log(`${prev?"Reemplazó":"Presentó"} su oferta por el portal en ${pr.codigo} (${p.razon})`);
+  notify(["ANALISTA_COMPRAS","ADMIN"],`${p.razon} ${prev?"reemplazó su":"presentó una"} oferta por el portal en ${pr.codigo}.`,"ti-world-upload");save();
+  toast(prev?"Oferta reemplazada":"Oferta enviada. Te avisaremos cuando haya resultado","ti-send");setTimeout(()=>{refresh();provProcDetalle(id)},0)},prev?"Reemplazar oferta":"Enviar oferta")}
+
+function vPEmp(){const p=myProv(),I=indicadores(p);
+ const dato=(l,v)=>`<div><small>${l}</small><b>${esc(v||"—")}</b></div>`;
+ $("#view").innerHTML=`<div class="grid g2"><div class="card"><div class="card-h"><h3>Datos de registro</h3><button class="btn btn-sm" id="eCont"><i class="ti ti-pencil"></i>Actualizar contacto</button></div>
+  <div class="kv" style="margin-top:0;grid-template-columns:1fr 1fr">${dato("Razón social",p.razon)}${dato("NIT",p.nit)}${dato("Actividad / nicho",p.nicho)}${dato("Ciudad",p.ciudad)}${dato("Representante legal",p.representante)}${dato("Correo",p.correo)}${dato("Teléfono",p.tel)}${dato("Modalidades",p.modalidades.map(m=>modLabel(m)).join(", "))}</div>
+  <p class="sub" style="margin-top:12px"><i class="ti ti-lock"></i> La razón social y el NIT no se pueden cambiar desde el portal: requieren verificación del comprador.</p></div>
+ <div class="card"><div class="card-h"><h3>Estados financieros ${I?I.anio:""}</h3><button class="btn btn-sm" id="eFin"><i class="ti ti-report-money"></i>${I?"Actualizar":"Registrar"}</button></div>
+  ${I?`<div class="kv" style="margin-top:0">${dato("Liquidez",I.liq.toFixed(2))}${dato("Endeudamiento",I.end.toFixed(1)+" %")}${dato("Cobertura de intereses",I.cob>=99?"Sin deuda":I.cob.toFixed(2))}${dato("Patrimonio",cop(I.pat))}${dato("Rentab. patrimonio",I.rp.toFixed(1)+" %")}${dato("Rentab. activo",I.ra.toFixed(1)+" %")}</div>`
+   :'<div class="info-box" style="background:var(--amber-soft);color:#78350F"><i class="ti ti-report-money" style="font-size:20px"></i><div>Registra tus estados financieros: sin ellos no puedes habilitarte en ningún proceso.</div></div>'}
+  <p class="sub" style="margin-top:10px">El comprador los contrasta con los estados financieros certificados que subes en «Mis documentos».</p></div></div>
+ <div class="card" style="margin-top:16px"><div class="card-h"><h3>Experiencia (${(p.exp||[]).length} contratos · ${cop(expValor(p))})</h3><button class="btn btn-sm" id="eExp"><i class="ti ti-plus"></i>Agregar contrato</button></div>
+  ${(p.exp||[]).length?`<div class="tbl"><table><thead><tr><th>Cliente</th><th>Objeto</th><th>UNSPSC</th><th>Año</th><th>Valor</th></tr></thead><tbody>${p.exp.map(c=>`<tr><td>${esc(c.cliente)}</td><td style="font-size:13px">${esc(c.objeto)}</td><td><span class="pill p-gray">${esc(c.unspsc)}</span></td><td>${c.anio}</td><td><b>${cop(c.valor)}</b></td></tr>`).join("")}</tbody></table></div>`:'<div class="empty">Aún no has registrado contratos</div>'}</div>`;
+ $("#eFin").onclick=()=>formFin(p.id);$("#eExp").onclick=()=>formExp(p.id);
+ $("#eCont").onclick=()=>modal("Actualizar datos de contacto","ti-address-book",`<div class="form2">${fld("rep","Representante legal",p.representante)}${fld("tel","Teléfono",p.tel)}<div style="grid-column:1/3">${fld("correo","Correo",p.correo,"","email")}</div></div>`,
+  ()=>{const v=k=>$("#f_"+k).value.trim();if(!/^\S+@\S+\.\S+$/.test(v("correo"))){$("#e_correo").textContent="Correo no válido";return false}if(!v("rep")){$("#e_rep").textContent="Obligatorio";return false}
+   p.representante=v("rep");p.tel=v("tel");p.correo=v("correo");log(`Actualizó sus datos de contacto (${p.razon})`);save();toast("Datos actualizados");setTimeout(refresh,0)})}
+
+function formRegistro(){if(!DB){DB=seed();save()}
+ modal("Registro en el portal de proveedores","ti-building-store",`<div class="info-box"><i class="ti ti-info-circle" style="font-size:20px"></i><div>Regístrate <b>una sola vez</b>. Después podrás subir tus documentos, ver los procesos a los que te inviten y presentar ofertas. Tu información queda sujeta a verificación del comprador.</div></div>
+  <div class="form2">${fld("razon","Razón social","","Servicios Generales del Eje SAS")}${fld("nit","NIT con dígito de verificación","","901.234.567-7")}${sel("nicho","Actividad principal (nicho)",NICHOS.map(n=>n.id))}${fld("ciudad","Ciudad","","Armenia")}${fld("rep","Representante legal")}${fld("tel","Teléfono","","310 555 0000")}
+  <div style="grid-column:1/3">${fld("correo","Correo corporativo (será tu usuario)","","contacto@empresa.co","email")}</div>${fld("pass","Contraseña","","Mínimo 8 caracteres, letras y números","password")}${fld("pass2","Confirmar contraseña","","","password")}</div>
+  <p style="font-weight:600;margin:4px 0 6px;font-size:13px">¿En qué tipo de procesos quieres participar?</p><div style="display:flex;gap:16px;font-size:13px;flex-wrap:wrap">${DB.perfiles.map(x=>`<label><input type="checkbox" class="rmod" value="${x.id}" ${x.id==="PRIV"?"checked":""}> ${esc(modLabel(x.id))}</label>`).join("")}</div><span class="err" id="e_mod"></span>
+  <label style="display:flex;gap:8px;font-size:13px;align-items:flex-start;margin-top:10px"><input type="checkbox" id="f_aut" style="margin-top:3px"><span>Autorizo el tratamiento de mis datos personales conforme a la Ley 1581 de 2012.</span></label><span class="err" id="e_aut"></span>`,
+ ()=>{const v=k=>$("#f_"+k).value.trim();let ok=true;const err=(k,m)=>{$("#e_"+k).textContent=m;ok=false};
+  if(v("razon").length<3)err("razon","Escribe la razón social");
+  const m=v("nit").match(/^(\d{3})\.?(\d{3})\.?(\d{3})-(\d)$/);
+  if(!m)err("nit","Formato: 901.234.567-7");else{const num=m[1]+m[2]+m[3];
+   if(dvNit(num)!==+m[4])err("nit",`El dígito de verificación no es válido para ese NIT`);
+   else if(DB.proveedores.some(p=>p.nit.replace(/\D/g,"").slice(0,9)===num))err("nit","Ese NIT ya está registrado. Si es tu empresa, recupera el acceso")}
+  if(!v("ciudad"))err("ciudad","Obligatorio");if(!v("rep"))err("rep","Obligatorio");
+  if(!/^\S+@\S+\.\S+$/.test(v("correo")))err("correo","Correo no válido");else if(DB.usuarios.some(u=>u.correo.toLowerCase()===v("correo").toLowerCase()))err("correo","Ese correo ya tiene una cuenta");
+  const pw=$("#f_pass").value;if(pw.length<8||!/[a-zA-Z]/.test(pw)||!/\d/.test(pw))err("pass","Mínimo 8 caracteres, con letras y números");else if(pw!==$("#f_pass2").value)err("pass2","Las contraseñas no coinciden");
+  const mods=[...document.querySelectorAll(".rmod:checked")].map(x=>x.value);if(!mods.length)err("mod","Elige al menos una modalidad");
+  if(!$("#f_aut").checked)err("aut","Debes autorizar el tratamiento de datos");if(!ok)return false;
+  const p={id:nextId(DB.proveedores),razon:v("razon"),nit:`${m[1]}.${m[2]}.${m[3]}-${m[4]}`,nicho:v("nicho"),ciudad:v("ciudad"),modalidades:mods,tipoPersona:"Jurídica",representante:v("rep"),correo:v("correo"),tel:v("tel"),tamano:"Pequeña",autorizacion:true,fin:null,exp:[],sarlaft:null,origen:"PORTAL"};
+  const u={id:nextId(DB.usuarios),nombre:v("rep"),correo:v("correo"),rol:"PROVEEDOR",prov:p.id,activo:true};
+  DB.proveedores.push(p);DB.usuarios.push(u);DB.audit.unshift({fecha:localNow(),usuario:u.nombre,rol:"PROVEEDOR",accion:`Se registró en el portal: ${p.razon} (NIT ${p.nit})`});
+  ME={nombre:u.nombre,rol:"PROVEEDOR",uid:u.id,provId:p.id};
+  notify(["ANALISTA_COMPRAS","ADMIN"],`Nuevo proveedor registrado en el portal: ${p.razon} (${p.nicho}). Pendiente de verificación y consulta SARLAFT.`,"ti-user-plus");save();
+  setTimeout(()=>{startSession();toast(`Bienvenido, ${p.razon}. Empieza subiendo tus documentos`,"ti-building-store")},0)},"Crear cuenta")}
 
 /* ======================================================================
    TRAZABILIDAD Y USUARIOS

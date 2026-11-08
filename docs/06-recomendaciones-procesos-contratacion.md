@@ -45,3 +45,24 @@ python -m http.server 8765 --directory docs/mvp
 ```
 
 Pendiente: la aprobación del diseño por parte de Luis Torres antes de implementarlo en el código Java.
+
+## Modelo mixto: portal de proveedores
+
+Ejemplo: un banco contrata EpCore para seleccionar a sus proveedores de aseo.
+
+**Lo que hace el proveedor en el portal web:**
+- Se registra una sola vez. Se valida el dígito de verificación del NIT, que el NIT y el correo no estén repetidos y que acepte el tratamiento de datos (Ley 1581).
+- Sube sus documentos. EpCore valida NIT y fechas al instante; si no puede, pasan a la aprobación dual interna.
+- Ve las convocatorias abiertas y las invitaciones, revisa si cumple los requisitos y presenta una oferta confidencial, que puede reemplazar hasta el cierre. Al ofertar firma una declaración de que no tiene conflicto de interés.
+- Recibe avisos de invitaciones, adendas y resultados. Solo conoce su propio resultado.
+
+**Lo que se queda interno:** la evaluación, la aprobación dual, la consulta SARLAFT, las ofertas de los demás proponentes y la adjudicación.
+
+**Visibilidad del proceso:** *por invitación* (solo los proveedores invitados lo ven) o *convocatoria abierta*. Los procesos de entidades públicas se presentan oficialmente en SECOP II.
+
+**Implicaciones en el código Java:**
+- Rol `PROVEEDOR` vinculado a un `Proveedor`, con autorización a nivel de registro: un proveedor nunca puede ver los datos de otro.
+- Rutas separadas: `/portal/**` para proveedores y la parte interna para el comprador.
+- `Proceso.visibilidad` (`INVITACION`, `ABIERTO` o `SECOP`) y una relación `ProcesoInvitado`.
+- `Oferta.canal` (`PORTAL` o `INTERNO`) y la declaración de conflicto de interés.
+- Registro de proveedores con validación del NIT y verificación del correo.
