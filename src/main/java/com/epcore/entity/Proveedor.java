@@ -1,3 +1,4 @@
+
 package com.epcore.entity;
 
 import jakarta.persistence.*;
@@ -16,7 +17,7 @@ public class Proveedor {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
+    @Column(name = "id_proveedor")
     private Long idProveedor;
 
     @Column(name = "tipo_persona", nullable = false, length = 30)
@@ -72,7 +73,10 @@ public class Proveedor {
 
     @PrePersist
     public void prePersist() {
-        this.fechaCreacion = LocalDateTime.now();
+
+        if (this.fechaCreacion == null) {
+            this.fechaCreacion = LocalDateTime.now();
+        }
 
         if (this.estado == null) {
             this.estado = "ACTIVO";

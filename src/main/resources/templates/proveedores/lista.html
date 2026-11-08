@@ -1,76 +1,239 @@
+
 <!DOCTYPE html>
 <html lang="es"
       xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Proveedores - EPCORE</title>
+
     <link rel="stylesheet" th:href="@{/css/styles.css}">
+
+    <style>
+        /* Contenedor de la tabla */
+        .tabla-proveedores {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .tabla-proveedores table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        /* Columna de acciones */
+        .tabla-proveedores th:last-child,
+        .tabla-proveedores td:last-child {
+            min-width: 310px;
+        }
+
+        /* Alineación horizontal */
+        .acciones-proveedor {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: nowrap;
+            white-space: nowrap;
+        }
+
+        /* Estilo general de botones */
+        .accion-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            border: 1px solid transparent;
+            transition: background-color 0.2s ease;
+            white-space: nowrap;
+        }
+
+        /* Botón editar */
+        .accion-editar {
+            background-color: #e8f0fe;
+            color: #174477;
+            border-color: #c5d8f5;
+        }
+
+        .accion-editar:hover {
+            background-color: #d2e3fc;
+        }
+
+        /* Botón documentos */
+        .accion-documentos {
+            background-color: #e6f4ea;
+            color: #176b3a;
+            border-color: #b8dec5;
+        }
+
+        .accion-documentos:hover {
+            background-color: #ccebd5;
+        }
+
+        /* Botón eliminar */
+        .accion-eliminar {
+            background-color: #fde8e8;
+            color: #a12626;
+            border-color: #f5c2c2;
+        }
+
+        .accion-eliminar:hover {
+            background-color: #f9caca;
+        }
+
+        /* Texto de consulta */
+        .texto-consulta {
+            color: #6b7280;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* Mensaje cuando no hay proveedores */
+        .mensaje-vacio {
+            text-align: center;
+            padding: 20px;
+            color: #6b7280;
+        }
+    </style>
 </head>
+
 <body>
 
 <div class="container">
+
     <h1>Proveedores registrados</h1>
-    <p class="subtitle">Gestión inicial de proveedores para evaluación empresarial.</p>
 
-    <span sec:authorize="hasAnyRole('ADMIN', 'ANALISTA_COMPRAS')">
-        <a th:href="@{/proveedores/nuevo}" class="link">+ Registrar proveedor</a>
-        &nbsp; | &nbsp;
-    </span>
+    <p class="subtitle">
+        Gestión inicial de proveedores para evaluación empresarial.
+    </p>
 
-    <a th:href="@{/criterios}" class="link">Ver criterios</a>
+    <!-- NAVEGACIÓN PRINCIPAL -->
+    <div class="navegacion-proveedores">
 
-    <span sec:authorize="hasRole('ADMIN')">
-        &nbsp; | &nbsp;
-        <a th:href="@{/usuarios}" class="link">Ver usuarios</a>
-    </span>
+        <span sec:authorize="hasAnyRole('ADMIN', 'ANALISTA_COMPRAS')">
+            <a th:href="@{/proveedores/nuevo}" class="link">
+                + Registrar proveedor
+            </a>
+            &nbsp; | &nbsp;
+        </span>
+
+        <a th:href="@{/criterios}" class="link">
+            Ver criterios
+        </a>
+
+        <span sec:authorize="hasRole('ADMIN')">
+            &nbsp; | &nbsp;
+            <a th:href="@{/usuarios}" class="link">
+                Ver usuarios
+            </a>
+        </span>
+
+    </div>
 
     <br><br>
 
-    <table>
-        <thead>
-        <tr>
-            <th>ID</th>
-            <th>NIT</th>
-            <th>Razón social</th>
-            <th>Correo</th>
-            <th>Ciudad</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-        </tr>
-        </thead>
+    <!-- TABLA DE PROVEEDORES -->
+    <div class="tabla-proveedores">
 
-        <tbody>
-        <tr th:each="proveedor : ${proveedores}">
-            <td th:text="${proveedor.idProveedor}"></td>
-            <td th:text="${proveedor.nit}"></td>
-            <td th:text="${proveedor.razonSocial}"></td>
-            <td th:text="${proveedor.correo}"></td>
-            <td th:text="${proveedor.ciudad}"></td>
-            <td>
-                <span class="badge" th:text="${proveedor.estado}"></span>
-            </td>
-            <td>
-                <span sec:authorize="hasAnyRole('ADMIN', 'ANALISTA_COMPRAS')">
-                    <a th:href="@{/proveedores/editar/{idProveedor}(idProveedor=${proveedor.idProveedor})}" class="link">Editar</a>
-                </span>
+        <table>
 
-                <span sec:authorize="hasRole('ADMIN')">
-                    &nbsp; | &nbsp;
-                    <a th:href="@{/proveedores/eliminar/{idProveedor}(idProveedor=${proveedor.idProveedor})}"
-                       class="link"
-                       onclick="return confirm('¿Está seguro de eliminar este proveedor?');">
-                        Eliminar
-                    </a>
-                </span>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>NIT</th>
+                <th>Razón social</th>
+                <th>Correo</th>
+                <th>Ciudad</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+            </thead>
 
-                <span sec:authorize="hasAnyRole('GERENTE', 'AUDITOR')">
-                    Solo consulta
-                </span>
-            </td>
-        </tr>
-        </tbody>
-    </table>
+            <tbody>
+
+            <!-- LISTADO DE PROVEEDORES -->
+            <tr th:each="proveedor : ${proveedores}">
+
+                <td th:text="${proveedor.idProveedor}"></td>
+
+                <td th:text="${proveedor.nit}"></td>
+
+                <td th:text="${proveedor.razonSocial}"></td>
+
+                <td th:text="${proveedor.correo}"></td>
+
+                <td th:text="${proveedor.ciudad}"></td>
+
+                <!-- ESTADO -->
+                <td>
+                    <span class="badge"
+                          th:text="${proveedor.estado}">
+                    </span>
+                </td>
+
+                <!-- ACCIONES -->
+                <td>
+
+                    <div class="acciones-proveedor">
+
+                        <!-- EDITAR -->
+                        <span sec:authorize="hasAnyRole('ADMIN', 'ANALISTA_COMPRAS')">
+
+                            <a th:href="@{/proveedores/editar/{idProveedor}(idProveedor=${proveedor.idProveedor})}"
+                               class="accion-btn accion-editar">
+                                Editar
+                            </a>
+
+                        </span>
+
+                        <!-- DOCUMENTOS -->
+                        <a th:href="@{/proveedores/{idProveedor}/documentos(idProveedor=${proveedor.idProveedor})}"
+                           class="accion-btn accion-documentos">
+                            Documentos
+                        </a>
+
+                        <!-- ELIMINAR -->
+                        <span sec:authorize="hasRole('ADMIN')">
+
+                            <a th:href="@{/proveedores/eliminar/{idProveedor}(idProveedor=${proveedor.idProveedor})}"
+                               class="accion-btn accion-eliminar"
+                               onclick="return confirm('¿Está seguro de eliminar este proveedor?');">
+                                Eliminar
+                            </a>
+
+                        </span>
+
+                        <!-- SOLO CONSULTA -->
+                        <span sec:authorize="hasAnyRole('GERENTE', 'AUDITOR')"
+                              class="texto-consulta">
+                            Solo consulta
+                        </span>
+
+                    </div>
+
+                </td>
+
+            </tr>
+
+            <!-- SIN PROVEEDORES -->
+            <tr th:if="${proveedores == null or #lists.isEmpty(proveedores)}">
+                <td colspan="7" class="mensaje-vacio">
+                    No hay proveedores registrados actualmente.
+                </td>
+            </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
 </div>
 
 </body>
