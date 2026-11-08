@@ -42,7 +42,7 @@ public class ProveedorWebController {
         return "proveedores/formulario";
     }
 
-    @GetMapping("/proveedores/eliminar/{idProveedor}")
+    @PostMapping("/proveedores/eliminar/{idProveedor}")
     public String eliminarProveedor(@PathVariable Long idProveedor) {
         proveedorService.eliminarProveedor(idProveedor);
         return "redirect:/proveedores";

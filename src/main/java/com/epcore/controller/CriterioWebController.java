@@ -42,7 +42,7 @@ public class CriterioWebController {
         return "proveedores/criterios/formulario";
     }
 
-    @GetMapping("/criterios/eliminar/{id}")
+    @PostMapping("/criterios/eliminar/{id}")
     public String eliminarCriterio(@PathVariable Long id) {
         criterioService.eliminar(id);
         return "redirect:/criterios";

@@ -420,6 +420,52 @@ public class ProveedorDocumentoWebController {
                             + "Formatos permitidos: PDF, Word, Excel, JPG y PNG."
             );
         }
+
+        if (!contenidoCoincideConExtension(archivo, extension)) {
+            throw new IllegalArgumentException(
+                    "El contenido del archivo no corresponde a un ."
+                            + extension
+                            + " válido. Por seguridad no se acepta."
+            );
+        }
+    }
+
+    /**
+     * Revisa la "firma" de los primeros bytes del archivo: así no se puede
+     * subir, por ejemplo, un ejecutable renombrado como .pdf.
+     */
+    static boolean contenidoCoincideConExtension(MultipartFile archivo, String extension) {
+        byte[] cabecera = new byte[8];
+        int leidos;
+
+        try (java.io.InputStream entrada = archivo.getInputStream()) {
+            leidos = entrada.readNBytes(cabecera, 0, cabecera.length);
+        } catch (IOException e) {
+            return false;
+        }
+
+        return switch (extension) {
+            case "pdf" -> empiezaCon(cabecera, leidos, 0x25, 0x50, 0x44, 0x46);              // %PDF
+            case "png" -> empiezaCon(cabecera, leidos, 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A);
+            case "jpg", "jpeg" -> empiezaCon(cabecera, leidos, 0xFF, 0xD8, 0xFF);
+            case "docx", "xlsx" -> empiezaCon(cabecera, leidos, 0x50, 0x4B, 0x03, 0x04);     // ZIP (Office moderno)
+            case "doc", "xls" -> empiezaCon(cabecera, leidos, 0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1);
+            default -> false;
+        };
+    }
+
+    private static boolean empiezaCon(byte[] datos, int leidos, int... firma) {
+        if (leidos < firma.length) {
+            return false;
+        }
+
+        for (int i = 0; i < firma.length; i++) {
+            if ((datos[i] & 0xFF) != firma[i]) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private Path guardarArchivoFisico(

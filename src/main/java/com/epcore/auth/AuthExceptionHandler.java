@@ -22,6 +22,16 @@ public class AuthExceptionHandler {
         ));
     }
 
+    @ExceptionHandler(org.springframework.security.authentication.LockedException.class)
+    public ResponseEntity<Map<String, Object>> handleLocked(org.springframework.security.authentication.LockedException ex) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(Map.of(
+                "timestamp", Instant.now().toString(),
+                "status", 429,
+                "error", "Too Many Requests",
+                "message", "Demasiados intentos fallidos. La cuenta está bloqueada temporalmente; intente en 15 minutos."
+        ));
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleBadRequest(IllegalArgumentException ex) {
         return ResponseEntity.badRequest().body(Map.of(

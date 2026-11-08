@@ -44,13 +44,13 @@ public class UsuarioWebController {
         return "usuarios/formulario";
     }
 
-    @GetMapping("/usuarios/inactivar/{id}")
+    @PostMapping("/usuarios/inactivar/{id}")
     public String inactivarUsuario(@PathVariable Long id) {
         usuarioService.inactivar(id);
         return "redirect:/usuarios";
     }
 
-    @GetMapping("/usuarios/activar/{id}")
+    @PostMapping("/usuarios/activar/{id}")
     public String activarUsuario(@PathVariable Long id) {
         usuarioService.activar(id);
         return "redirect:/usuarios";

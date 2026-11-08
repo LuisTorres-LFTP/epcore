@@ -116,7 +116,7 @@ public class EvaluacionWebController {
         return "redirect:/evaluaciones";
     }
 
-    @GetMapping("/evaluaciones/eliminar/{id}")
+    @PostMapping("/evaluaciones/eliminar/{id}")
     public String eliminarEvaluacion(@PathVariable Long id) {
         evaluacionDetalleService.eliminarPorEvaluacion(id);
         evaluacionService.eliminar(id);

@@ -1,5 +1,8 @@
 package com.epcore.auth;
 
+import com.epcore.security.LoginAttemptService;
+import org.springframework.security.authentication.BadCredentialsException;
+
 import com.epcore.config.JwtService;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -15,10 +18,13 @@ public class AuthService {
 
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final LoginAttemptService loginAttemptService;
 
-    public AuthService(AuthenticationManager authenticationManager, JwtService jwtService) {
+    public AuthService(AuthenticationManager authenticationManager, JwtService jwtService,
+                       LoginAttemptService loginAttemptService) {
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
+        this.loginAttemptService = loginAttemptService;
     }
 
     public LoginResponse login(LoginRequest request) {
@@ -27,9 +33,17 @@ public class AuthService {
             throw new IllegalArgumentException("Correo y contraseña son obligatorios");
         }
 
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.correo().trim(), request.password())
-        );
+        String correo = request.correo().trim();
+        Authentication authentication;
+        try {
+            authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(correo, request.password())
+            );
+        } catch (BadCredentialsException ex) {
+            loginAttemptService.registrarFallo(correo);
+            throw ex;
+        }
+        loginAttemptService.registrarExito(correo);
 
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         String token = jwtService.generateToken(userDetails);

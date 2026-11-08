@@ -17,16 +17,35 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
+    /** Claves que estuvieron publicadas como valor por defecto y no deben usarse nunca. */
+    private static final java.util.Set<String> CLAVES_PUBLICAS = java.util.Set.of(
+            "change-this-development-secret-key-at-least-32-chars",
+            "CAMBIAR_POR_UN_SECRETO_LARGO_Y_ALEATORIO_DE_AL_MENOS_32_CARACTERES");
+
     private final SecretKey signingKey;
     private final long expirationMs;
 
     public JwtService(
             @Value("${app.jwt.secret}") String secret,
             @Value("${app.jwt.expiration-ms:28800000}") long expirationMs) {
-        if (secret == null || secret.getBytes(StandardCharsets.UTF_8).length < 32) {
-            throw new IllegalArgumentException("JWT_SECRET debe tener al menos 32 bytes");
+        if (secret == null || secret.isBlank()) {
+            // Sin JWT_SECRET se usa una clave aleatoria que nadie conoce. Es segura,
+            // pero los tokens dejan de servir al reiniciar: en producción defina JWT_SECRET.
+            byte[] aleatoria = new byte[48];
+            new java.security.SecureRandom().nextBytes(aleatoria);
+            org.slf4j.LoggerFactory.getLogger(JwtService.class).warn(
+                    "JWT_SECRET no está definido: se generó una clave aleatoria temporal.");
+            this.signingKey = Keys.hmacShaKeyFor(aleatoria);
+        } else {
+            if (secret.getBytes(StandardCharsets.UTF_8).length < 32) {
+                throw new IllegalArgumentException("JWT_SECRET debe tener al menos 32 bytes");
+            }
+            if (CLAVES_PUBLICAS.contains(secret)) {
+                throw new IllegalArgumentException(
+                        "JWT_SECRET usa una clave de ejemplo publicada en el repositorio; defina una propia.");
+            }
+            this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         }
-        this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.expirationMs = expirationMs;
     }
 

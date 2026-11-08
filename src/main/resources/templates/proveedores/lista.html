@@ -201,11 +201,7 @@
                         <!-- ELIMINAR -->
                         <span sec:authorize="hasRole('ADMIN')">
 
-                            <a th:href="@{/proveedores/eliminar/{idProveedor}(idProveedor=${proveedor.idProveedor})}"
-                               class="accion-btn accion-eliminar"
-                               onclick="return confirm('¿Está seguro de eliminar este proveedor?');">
-                                Eliminar
-                            </a>
+                            <form th:action="@{/proveedores/eliminar/{idProveedor}(idProveedor=${proveedor.idProveedor})}" method="post" style="display:inline" onsubmit="return confirm('¿Está seguro de eliminar este proveedor?');"><button type="submit" class="accion-btn accion-eliminar">Eliminar</button></form>
 
                         </span>
 

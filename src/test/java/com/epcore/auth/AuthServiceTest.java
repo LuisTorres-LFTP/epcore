@@ -37,7 +37,7 @@ class AuthServiceTest {
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(authentication);
 
-        AuthService service = new AuthService(authenticationManager, jwtService);
+        AuthService service = new AuthService(authenticationManager, jwtService, new com.epcore.security.LoginAttemptService());
         LoginResponse response = service.login(new LoginRequest("admin@epcore.com", "secret"));
 
         assertNotNull(response.token());
