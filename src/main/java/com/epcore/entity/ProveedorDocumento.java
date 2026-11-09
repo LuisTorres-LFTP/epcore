@@ -57,6 +57,41 @@ public class ProveedorDocumento {
     @Column(name = "activo", nullable = false)
     private Boolean activo;
 
+    // ---------- Trazabilidad de la validación y la aprobación dual ----------
+
+    /** Usuario que cargó el documento (no puede aprobarlo). */
+    @Column(name = "cargado_por", length = 120)
+    private String cargadoPor;
+
+    /** true si el sistema verificó NIT y fechas y lo aprobó sin intervención humana. */
+    @Column(name = "validacion_automatica")
+    private Boolean validacionAutomatica;
+
+    /** Resultado de la lectura automática (qué se verificó o por qué no se pudo). */
+    @Column(name = "detalle_validacion", length = 1000)
+    private String detalleValidacion;
+
+    @Column(name = "aprobado_nivel1_por", length = 120)
+    private String aprobadoNivel1Por;
+
+    @Column(name = "fecha_aprobacion_nivel1")
+    private LocalDateTime fechaAprobacionNivel1;
+
+    @Column(name = "aprobado_nivel2_por", length = 120)
+    private String aprobadoNivel2Por;
+
+    @Column(name = "fecha_aprobacion_nivel2")
+    private LocalDateTime fechaAprobacionNivel2;
+
+    @Column(name = "rechazado_por", length = 120)
+    private String rechazadoPor;
+
+    @Column(name = "fecha_rechazo")
+    private LocalDateTime fechaRechazo;
+
+    @Column(name = "motivo_rechazo", length = 1000)
+    private String motivoRechazo;
+
     @PrePersist
     public void prePersist() {
         if (fechaCarga == null) {

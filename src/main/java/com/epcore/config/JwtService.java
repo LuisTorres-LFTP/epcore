@@ -60,6 +60,7 @@ public class JwtService {
         return Jwts.builder()
                 .subject(userDetails.getUsername())
                 .claim("roles", roles)
+                .claim("cli", com.epcore.multicliente.ClienteContexto.actual())
                 .issuedAt(now)
                 .expiration(expiration)
                 .signWith(signingKey)
@@ -73,10 +74,18 @@ public class JwtService {
     public boolean isTokenValid(String token, UserDetails userDetails) {
         try {
             String username = extractUsername(token);
-            return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
+            // El token solo vale en el cliente (base de datos) donde se emitió.
+            return username.equals(userDetails.getUsername()) && !isTokenExpired(token)
+                    && com.epcore.multicliente.ClienteContexto.actual().equals(clienteDe(token));
         } catch (RuntimeException ex) {
             return false;
         }
+    }
+
+    /** Cliente para el que se emitió el token (tokens antiguos sin dato = base principal). */
+    public String clienteDe(String token) {
+        String cli = extractClaim(token, c -> c.get("cli", String.class));
+        return cli == null ? com.epcore.multicliente.ClienteContexto.PRINCIPAL : cli;
     }
 
     public long getExpirationMs() {

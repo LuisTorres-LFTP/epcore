@@ -29,13 +29,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ProveedorDocumentoWebController {
 
-    private static final Set<String> ESTADOS_PERMITIDOS = Set.of(
-            "PENDIENTE",
-            "APROBADO",
-            "RECHAZADO",
-            "VENCIDO"
-    );
-
     private static final Set<String> EXTENSIONES_PERMITIDAS = Set.of(
             "pdf",
             "doc",
@@ -51,6 +44,8 @@ public class ProveedorDocumentoWebController {
 
     private final ProveedorDocumentoService proveedorDocumentoService;
     private final ProveedorRepository proveedorRepository;
+    private final com.epcore.service.DocumentoAprobacionService aprobacionService;
+    private final com.epcore.service.ValidadorDocumentoPdf validadorPdf;
 
     @Value("${epcore.archivos.directorio:uploads}")
     private String directorioArchivos;
@@ -128,7 +123,8 @@ public class ProveedorDocumentoWebController {
         model.addAttribute("proveedor", proveedor);
         model.addAttribute("documento", documento);
         model.addAttribute("tiposDocumento", obtenerTiposDocumento());
-        model.addAttribute("estadosDocumento", ESTADOS_PERMITIDOS);
+        // El estado ya no se elige al cargar: lo decide la validación automática o la aprobación dual.
+        model.addAttribute("estadosDocumento", java.util.List.of("PENDIENTE"));
 
         return "documentos/formulario";
     }
@@ -173,6 +169,7 @@ public class ProveedorDocumentoWebController {
             @RequestParam("archivo")
             MultipartFile archivo,
 
+            org.springframework.security.core.Authentication autenticacion,
             RedirectAttributes redirectAttributes
     ) {
         Path archivoGuardado = null;
@@ -203,15 +200,35 @@ public class ProveedorDocumentoWebController {
             documento.setFechaVencimiento(fechaVencimiento);
             documento.setTieneVencimiento(tieneVencimiento);
             documento.setObligatorio(obligatorio);
-            documento.setEstadoValidacion("PENDIENTE");
             documento.setObservacion(observacion);
             documento.setActivo(true);
+            documento.setCargadoPor(autenticacion.getName());
+
+            // Validación automática: si NIT y fechas coinciden, queda aprobado por el sistema;
+            // si no, pasa a la aprobación dual (Director de compras -> Gerente).
+            com.epcore.service.ValidadorDocumentoPdf.Resultado validacion = validadorPdf.validar(
+                    archivo.getBytes(),
+                    obtenerExtension(limpiarNombreArchivo(archivo.getOriginalFilename())),
+                    proveedor.getNit(),
+                    fechaExpedicion,
+                    Boolean.TRUE.equals(tieneVencimiento) ? fechaVencimiento : null,
+                    LocalDate.now()
+            );
+            documento.setValidacionAutomatica(validacion.automatico());
+            documento.setDetalleValidacion(validacion.automatico()
+                    ? "Verificado por el sistema: " + String.join("; ", validacion.verificaciones())
+                    : validacion.motivo());
+            documento.setEstadoValidacion(validacion.automatico()
+                    ? com.epcore.service.DocumentoAprobacionService.APROBADO
+                    : com.epcore.service.DocumentoAprobacionService.PENDIENTE);
 
             proveedorDocumentoService.guardar(documento);
 
             redirectAttributes.addFlashAttribute(
                     "mensajeExito",
-                    "El documento fue registrado correctamente."
+                    validacion.automatico()
+                            ? "Documento aprobado por el sistema: NIT y fechas verificados."
+                            : "Documento registrado. El sistema no pudo validarlo y pasa a aprobación dual (Director de compras y luego Gerente)."
             );
 
         } catch (IllegalArgumentException exception) {
@@ -256,64 +273,62 @@ public class ProveedorDocumentoWebController {
                 + "/documentos";
     }
 
-    @PostMapping("/{idDocumento}/estado")
-    public String actualizarEstadoValidacion(
+    /**
+     * Aprobación dual: el nivel lo decide el estado del documento y los permisos
+     * del usuario. 0/2 -> Director de compras (nivel 1); 1/2 -> Gerente (nivel 2).
+     */
+    @PostMapping("/{idDocumento}/aprobar")
+    public String aprobarDocumento(
             @PathVariable Long idProveedor,
             @PathVariable Long idDocumento,
-            @RequestParam String estadoValidacion,
-            @RequestParam(
-                    value = "observacion",
-                    required = false
-            )
-            String observacion,
+            org.springframework.security.core.Authentication autenticacion,
             RedirectAttributes redirectAttributes
     ) {
         try {
-            obtenerProveedor(idProveedor);
+            ProveedorDocumento documento = obtenerDocumentoDelProveedor(idDocumento, idProveedor);
+            boolean nivel1 = tienePermiso(autenticacion, com.epcore.entity.Permiso.DOCUMENTOS_APROBAR_NIVEL_1);
+            boolean nivel2 = tienePermiso(autenticacion, com.epcore.entity.Permiso.DOCUMENTOS_APROBAR_NIVEL_2);
 
-            ProveedorDocumento documento =
-                    obtenerDocumentoDelProveedor(
-                            idDocumento,
-                            idProveedor
-                    );
-
-            String estadoNormalizado = estadoValidacion
-                    .trim()
-                    .toUpperCase(Locale.ROOT);
-
-            if (!ESTADOS_PERMITIDOS.contains(estadoNormalizado)) {
-                throw new IllegalArgumentException(
-                        "El estado documental no es válido."
-                );
+            if (com.epcore.service.DocumentoAprobacionService.PENDIENTE.equals(documento.getEstadoValidacion()) && nivel1) {
+                aprobacionService.aprobarNivel1(idDocumento, autenticacion.getName());
+                redirectAttributes.addFlashAttribute("mensajeExito",
+                        "Primera aprobación registrada (1/2). Pasa al Gerente como supervisor.");
+            } else if (com.epcore.service.DocumentoAprobacionService.EN_APROBACION.equals(documento.getEstadoValidacion()) && nivel2) {
+                aprobacionService.aprobarNivel2(idDocumento, autenticacion.getName());
+                redirectAttributes.addFlashAttribute("mensajeExito", "Documento aprobado por supervisor (2/2).");
+            } else {
+                throw new IllegalStateException(
+                        "Su rol no corresponde al paso de aprobación en que está este documento.");
             }
-
-            if ("APROBADO".equals(estadoNormalizado)
-                    && proveedorDocumentoService.estaVencido(documento)) {
-                throw new IllegalArgumentException(
-                        "No se puede aprobar un documento vencido."
-                );
-            }
-
-            documento.setEstadoValidacion(estadoNormalizado);
-            documento.setObservacion(observacion);
-
-            proveedorDocumentoService.guardar(documento);
-
-            redirectAttributes.addFlashAttribute(
-                    "mensajeExito",
-                    "El estado del documento fue actualizado."
-            );
-
-        } catch (IllegalArgumentException exception) {
-            redirectAttributes.addFlashAttribute(
-                    "mensajeError",
-                    exception.getMessage()
-            );
+        } catch (IllegalArgumentException | IllegalStateException exception) {
+            redirectAttributes.addFlashAttribute("mensajeError", exception.getMessage());
         }
 
-        return "redirect:/proveedores/"
-                + idProveedor
-                + "/documentos";
+        return "redirect:/proveedores/" + idProveedor + "/documentos";
+    }
+
+    @PostMapping("/{idDocumento}/rechazar")
+    public String rechazarDocumento(
+            @PathVariable Long idProveedor,
+            @PathVariable Long idDocumento,
+            @RequestParam String motivo,
+            org.springframework.security.core.Authentication autenticacion,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            obtenerDocumentoDelProveedor(idDocumento, idProveedor);
+            aprobacionService.rechazar(idDocumento, autenticacion.getName(), motivo);
+            redirectAttributes.addFlashAttribute("mensajeExito", "Documento rechazado. Queda registrado el motivo.");
+        } catch (IllegalArgumentException | IllegalStateException exception) {
+            redirectAttributes.addFlashAttribute("mensajeError", exception.getMessage());
+        }
+
+        return "redirect:/proveedores/" + idProveedor + "/documentos";
+    }
+
+    private static boolean tienePermiso(org.springframework.security.core.Authentication auth,
+                                        com.epcore.entity.Permiso permiso) {
+        return auth.getAuthorities().stream().anyMatch(a -> permiso.name().equals(a.getAuthority()));
     }
 
     @PostMapping("/{idDocumento}/inactivar")

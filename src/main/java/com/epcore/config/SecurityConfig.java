@@ -93,7 +93,7 @@ public class SecurityConfig {
                         .hasAuthority(Permiso.CATALOGOS_GESTIONAR.name())
                         .requestMatchers("/criterios/**").hasAnyAuthority(Permiso.EVALUACIONES_VER.name(), Permiso.CATALOGOS_GESTIONAR.name())
                         // Documentos: aprobar exige permiso de aprobación; cargar o inactivar, permiso de carga.
-                        .requestMatchers(HttpMethod.POST, "/proveedores/*/documentos/*/estado")
+                        .requestMatchers(HttpMethod.POST, "/proveedores/*/documentos/*/aprobar", "/proveedores/*/documentos/*/rechazar")
                         .hasAnyAuthority(Permiso.DOCUMENTOS_APROBAR_NIVEL_1.name(), Permiso.DOCUMENTOS_APROBAR_NIVEL_2.name())
                         .requestMatchers(HttpMethod.POST, "/proveedores/*/documentos/**").hasAuthority(Permiso.DOCUMENTOS_CARGAR.name())
                         .requestMatchers("/proveedores/*/documentos/nuevo").hasAuthority(Permiso.DOCUMENTOS_CARGAR.name())

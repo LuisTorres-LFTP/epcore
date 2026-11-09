@@ -7,7 +7,6 @@ import com.epcore.repository.NichoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Set;
@@ -24,10 +23,15 @@ public class CatalogoClasificacionRunner implements CommandLineRunner {
 
     private final ActividadCiiuRepository actividadCiiuRepository;
     private final NichoRepository nichoRepository;
+    private final com.epcore.multicliente.ClientesConfigurados clientes;
 
     @Override
-    @Transactional
     public void run(String... args) {
+        // En la base de cada cliente (y en la principal)
+        clientes.paraCadaCliente(id -> cargarSiVacio());
+    }
+
+    private void cargarSiVacio() {
         if (actividadCiiuRepository.count() == 0) {
             actividadCiiuRepository.saveAll(List.of(
                     ciiu("8121", "Limpieza general interior de edificios"),

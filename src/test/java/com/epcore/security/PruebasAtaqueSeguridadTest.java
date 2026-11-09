@@ -214,9 +214,9 @@ class PruebasAtaqueSeguridadTest {
     @Test
     @DisplayName("Un ADMIN no puede aprobar documentos (separación de funciones)")
     void adminNoApruebaDocumentos() throws Exception {
-        mvc.perform(post("/proveedores/1/documentos/1/estado")
+        mvc.perform(post("/proveedores/1/documentos/1/aprobar")
                         .with(user(usr("admin@epcore.co", com.epcore.entity.Rol.ADMIN)))
-                        .with(csrf()).param("estadoValidacion", "APROBADO"))
+                        .with(csrf()))
                 .andExpect(status().isForbidden());
     }
 

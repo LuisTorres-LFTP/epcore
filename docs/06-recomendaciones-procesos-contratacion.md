@@ -66,3 +66,26 @@ Ejemplo: un banco contrata EpCore para seleccionar a sus proveedores de aseo.
 - `Proceso.visibilidad` (`INVITACION`, `ABIERTO` o `SECOP`) y una relación `ProcesoInvitado`.
 - `Oferta.canal` (`PORTAL` o `INTERNO`) y la declaración de conflicto de interés.
 - Registro de proveedores con validación del NIT y verificación del correo.
+
+## Separación de datos por cliente (una base de datos por cliente)
+
+Cada empresa cliente tiene **su propia base de datos**. EpCore identifica al cliente por el subdominio (`bancocafetero.epcore.co`) y solo se conecta a su base. Un cliente que no existe recibe 404.
+
+- **Sesión y tokens amarrados al cliente:** una sesión o un JWT emitidos para un cliente se rechazan en otro.
+- **Al arrancar,** EpCore crea o actualiza las tablas, los roles predefinidos, el catálogo inicial y el **primer administrador de accesos** de cada cliente. Es lo único que crea la firma EpCore; después, cada cliente gestiona sus usuarios.
+- **Desactivado por defecto:** sin configuración, EpCore usa una sola base, como siempre.
+
+Configuración (por variables de entorno o en un archivo externo; **nunca en Git**):
+
+```
+EPCORE_MULTICLIENTE_HABILITADO=true
+EPCORE_MULTICLIENTE_DOMINIO_BASE=epcore.co
+EPCORE_MULTICLIENTE_CLIENTES_BANCOCAFETERO_NOMBRE=Banco Cafetero de Colombia
+EPCORE_MULTICLIENTE_CLIENTES_BANCOCAFETERO_URL=jdbc:mysql://servidor:3306/epcore_bancocafetero?sslMode=REQUIRED
+EPCORE_MULTICLIENTE_CLIENTES_BANCOCAFETERO_USUARIO=...
+EPCORE_MULTICLIENTE_CLIENTES_BANCOCAFETERO_CLAVE=...
+EPCORE_MULTICLIENTE_CLIENTES_BANCOCAFETERO_ADMIN_CORREO=accesos@bancocafetero.co
+EPCORE_MULTICLIENTE_CLIENTES_BANCOCAFETERO_ADMIN_CLAVE=...   (mínimo 12 caracteres)
+```
+
+Cada base de cliente necesita su propio usuario de MySQL con permisos solo sobre esa base, copias de seguridad independientes y, por la Ley 1581 de 2012, un contrato de transmisión de datos entre el cliente (responsable) y EpCore (encargado).

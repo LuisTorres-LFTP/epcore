@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.EnumSet;
@@ -22,10 +21,15 @@ import java.util.EnumSet;
 public class RolesPredeterminadosRunner implements CommandLineRunner {
 
     private final RolSistemaRepository rolSistemaRepository;
+    private final com.epcore.multicliente.ClientesConfigurados clientes;
 
     @Override
-    @Transactional
     public void run(String... args) {
+        // En la base de cada cliente (y en la principal)
+        clientes.paraCadaCliente(id -> crearFaltantes());
+    }
+
+    private void crearFaltantes() {
         PerfilesPredeterminados.todos().forEach((rol, perfil) -> {
             if (!rolSistemaRepository.existsByCodigo(rol.name())) {
                 rolSistemaRepository.save(RolSistema.builder()
