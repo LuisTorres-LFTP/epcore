@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Nuevo proceso - EPCORE</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+<div class="container" style="max-width:820px">
+    <h1>Nuevo proceso de contratación</h1>
+    <p class="subtitle">Se crea como borrador con la plantilla de requisitos y factores de puntaje de la modalidad elegida.</p>
+
+    <p th:if="${mensajeError}" th:text="${mensajeError}"
+       style="color:#9F1239;font-weight:600;background:#FDE8EE;padding:10px 12px;border-radius:8px"></p>
+
+    <form th:action="@{/procesos/nuevo}" method="post">
+        <label>Modalidad</label>
+        <select name="modalidad" required>
+            <option value="FINANCIERA">Solicitud de propuestas — entidad financiera</option>
+            <option value="PRIVADA">Convocatoria privada</option>
+            <option value="PUBLICA">Licitación pública (referencia SECOP II)</option>
+        </select>
+        <br><br>
+        <label>Publicación en el portal</label>
+        <select name="visibilidad">
+            <option value="INVITACION">Por invitación (solo los proveedores invitados lo ven)</option>
+            <option value="ABIERTO">Convocatoria abierta a todos los registrados</option>
+        </select>
+        <small style="color:#64748B">En licitación pública se publica oficialmente en SECOP II.</small>
+        <br><br>
+        <label>Código del proceso</label>
+        <input name="codigo" required maxlength="40" placeholder="RFP-BC-2026-044">
+        <br><br>
+        <label>Objeto</label>
+        <input name="nombre" required maxlength="300" placeholder="Servicio integral de aseo y cafetería">
+        <br><br>
+        <label>Entidad contratante o área solicitante</label>
+        <input name="entidad" required maxlength="150">
+        <br><br>
+        <label>Presupuesto (COP)</label>
+        <input name="presupuesto" type="number" min="1" step="1" required>
+        &nbsp; <label>Cierre de ofertas</label>
+        <input name="fechaCierre" type="datetime-local" required>
+        <br><br>
+        <label>Proveedores invitados (si es por invitación)</label><br>
+        <select name="invitados" multiple size="8" style="min-width:420px">
+            <option th:each="p : ${proveedores}" th:value="${p.idProveedor}" th:text="${p.razonSocial} + ' · ' + ${p.nit}"></option>
+        </select>
+        <br><small style="color:#64748B">Mantenga Ctrl presionado para elegir varios.</small>
+        <br><br>
+        <button type="submit">Crear borrador</button>
+        &nbsp; <a th:href="@{/procesos}" class="link">Cancelar</a>
+    </form>
+</div>
+</body>
+</html>

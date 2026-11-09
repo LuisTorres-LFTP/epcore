@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${proceso.codigo} + ' - EPCORE'">Proceso</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+<div class="container">
+    <h1 th:text="${proceso.nombre}"></h1>
+    <p class="subtitle" th:text="${proceso.entidadContratante} + ' · ' + ${proceso.codigo}"></p>
+
+    <p th:if="${mensajeExito}" th:text="${mensajeExito}" style="color:#166534;font-weight:600"></p>
+    <p th:if="${mensajeError}" th:text="${mensajeError}" style="color:#9F1239;font-weight:600"></p>
+    <a th:href="@{/portal/procesos}" class="link">Volver a procesos</a>
+
+    <p>
+        <b>Presupuesto oficial:</b> <span th:text="${'$ ' + #numbers.formatDecimal(proceso.presupuesto, 0, 'POINT', 0, 'COMMA')}"></span>
+        &nbsp;·&nbsp; <b>Cierre:</b> <span th:text="${#temporals.format(proceso.fechaCierre, 'dd/MM/yyyy HH:mm')}"></span>
+        &nbsp;·&nbsp; <b>Estado:</b> <span th:text="${proceso.estado}"></span>
+    </p>
+
+    <p th:if="${proceso.modalidad.name() == 'PUBLICA'}" style="background:#F1EBFE;padding:10px 12px;border-radius:8px">
+        Proceso de una entidad pública: la oferta oficial se presenta en SECOP II. Aquí puede revisar si cumple los requisitos.
+    </p>
+
+    <div th:if="${miOferta}" style="background:#E3F6EA;padding:10px 12px;border-radius:8px">
+        <b>Su oferta:</b> <span th:text="${'$ ' + #numbers.formatDecimal(miOferta.valor, 0, 'POINT', 0, 'COMMA')}"></span>
+        · plazo <span th:text="${miOferta.plazoDias}"></span> días
+        · enviada el <span th:text="${#temporals.format(miOferta.fechaPresentacion, 'dd/MM/yyyy HH:mm')}"></span>.
+        Es confidencial: los demás proponentes no la ven.
+        <b th:if="${resultado}" th:text="' Resultado: ' + ${resultado} + '.'"></b>
+    </div>
+
+    <h3>¿Cumple los requisitos? <small style="color:#64748B">(revisión previa con sus datos de hoy)</small></h3>
+    <p th:if="${#lists.isEmpty(pendientes)}" style="color:#166534">Según sus datos actuales cumple los requisitos habilitantes. El comprador hará la verificación final.</p>
+    <ul>
+        <li th:each="t : ${pendientes}" th:text="${t}" style="color:#9F1239"></li>
+    </ul>
+    <p th:if="${proceso.requisitos.exigirSarlaft}" style="font-size:13px;color:#64748B">
+        El comprador también verifica a su empresa en listas restrictivas (SARLAFT). Esa consulta es confidencial.
+    </p>
+
+    <h3>Cómo se califican las ofertas (100 puntos)</h3>
+    <ul>
+        <li th:if="${proceso.factores.precio > 0}" th:text="'Oferta económica: ' + ${proceso.factores.precio}"></li>
+        <li th:if="${proceso.factores.tecnica > 0}" th:text="'Propuesta técnica: ' + ${proceso.factores.tecnica}"></li>
+        <li th:if="${proceso.factores.plazo > 0}" th:text="'Plazo de entrega: ' + ${proceso.factores.plazo}"></li>
+        <li th:if="${proceso.factores.experiencia > 0}" th:text="'Experiencia acreditada: ' + ${proceso.factores.experiencia}"></li>
+        <li th:if="${proceso.factores.desempeno > 0}" th:text="'Desempeño histórico: ' + ${proceso.factores.desempeno}"></li>
+        <li th:if="${proceso.factores.industriaNacional > 0}" th:text="'Industria nacional (Ley 816 de 2003): ' + ${proceso.factores.industriaNacional}"></li>
+    </ul>
+
+    <h3>Adendas</h3>
+    <p th:if="${#lists.isEmpty(adendas)}">Sin adendas.</p>
+    <div th:each="a : ${adendas}" style="margin-bottom:10px">
+        <b th:text="'Adenda No. ' + ${a.numero}"></b> · <span th:text="${#temporals.format(a.fechaEmision, 'dd/MM/yyyy')}"></span><br>
+        <span th:text="${a.justificacion}"></span>
+        <pre style="white-space:pre-wrap;font-family:inherit;color:#475569" th:text="${a.cambios}"></pre>
+    </div>
+
+    <div th:if="${puedeOfertar}">
+        <h3 th:text="${miOferta} ? 'Reemplazar oferta' : 'Presentar oferta'"></h3>
+        <form th:action="@{/portal/procesos/{id}/oferta(id=${proceso.idProceso})}" method="post">
+            <label>Valor ofertado (COP, IVA incluido)</label>
+            <input type="number" name="valor" min="1" step="1" required>
+            &nbsp; <label>Plazo (días)</label>
+            <input type="number" name="plazoDias" min="1" step="1" required>
+            <br><br>
+            <label style="font-weight:normal">
+                <input type="checkbox" name="declaracion" value="true" required>
+                Declaro bajo la gravedad de juramento que la información es veraz y que no tengo vínculos ni conflicto
+                de interés con empleados o directivos de <span th:text="${proceso.entidadContratante}"></span>.
+            </label>
+            <br><br>
+            <button type="submit" th:text="${miOferta} ? 'Reemplazar oferta' : 'Enviar oferta'"></button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

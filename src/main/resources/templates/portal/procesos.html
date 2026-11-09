@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Procesos y ofertas - EPCORE</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+<div class="container">
+    <h1>Procesos y ofertas</h1>
+    <p class="subtitle">Convocatorias abiertas y procesos a los que fue invitado. Su oferta es confidencial y puede reemplazarla
+        hasta el cierre. Los procesos de entidades públicas se presentan oficialmente en SECOP II.</p>
+
+    <p th:if="${mensajeError}" th:text="${mensajeError}" style="color:#9F1239;font-weight:600"></p>
+    <a th:href="@{/portal}" class="link">Volver al inicio</a>
+
+    <table>
+        <thead>
+        <tr><th>Proceso</th><th>Entidad</th><th>Modalidad</th><th>Presupuesto</th><th>Cierre</th><th>Estado</th></tr>
+        </thead>
+        <tbody>
+        <tr th:if="${#lists.isEmpty(procesos)}"><td colspan="6">No hay procesos disponibles para usted.</td></tr>
+        <tr th:each="pr : ${procesos}">
+            <td><a th:href="@{/portal/procesos/{id}(id=${pr.idProceso})}" class="link" th:text="${pr.codigo}"></a><br>
+                <small th:text="${pr.nombre}"></small></td>
+            <td th:text="${pr.entidadContratante}"></td>
+            <td th:text="${pr.modalidad.name() == 'PUBLICA'} ? 'Licitación pública (SECOP II)'
+                      : (${pr.modalidad.name() == 'FINANCIERA'} ? 'Entidad financiera' : 'Convocatoria privada')"></td>
+            <td th:text="${'$ ' + #numbers.formatDecimal(pr.presupuesto, 0, 'POINT', 0, 'COMMA')}"></td>
+            <td th:text="${#temporals.format(pr.fechaCierre, 'dd/MM/yyyy HH:mm')}"></td>
+            <td th:text="${pr.estado}"></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

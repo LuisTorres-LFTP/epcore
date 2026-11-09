@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Mis documentos - EPCORE</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+<div class="container">
+    <h1>Mis documentos</h1>
+    <p class="subtitle">Suba sus documentos en PDF. EpCore lee el archivo y verifica su NIT y las fechas: si todo cumple,
+        queda aprobado al instante. Si no puede leerlo (por ejemplo, una imagen escaneada), pasa a revisión del comprador.</p>
+
+    <p th:if="${mensajeExito}" th:text="${mensajeExito}" style="color:#166534;font-weight:600"></p>
+    <p th:if="${mensajeError}" th:text="${mensajeError}" style="color:#9F1239;font-weight:600"></p>
+
+    <a th:href="@{/portal}" class="link">Volver al inicio</a>
+
+    <h3>Subir documento</h3>
+    <form th:action="@{/portal/documentos}" method="post" enctype="multipart/form-data">
+        <label>Tipo de documento</label>
+        <select name="tipoDocumento" required>
+            <option th:each="t : ${tipos}" th:value="${t}" th:text="${t}"></option>
+        </select>
+        &nbsp; <label>Expedición</label> <input type="date" name="fechaExpedicion">
+        &nbsp; <label>Vencimiento</label> <input type="date" name="fechaVencimiento">
+        <br><br>
+        <input type="file" name="archivo" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" required>
+        <button type="submit">Subir</button>
+        <small style="color:#64748B">Máximo 10 MB.</small>
+    </form>
+
+    <table>
+        <thead>
+        <tr><th>Documento</th><th>Estado</th><th>Vencimiento</th><th>Subido</th></tr>
+        </thead>
+        <tbody>
+        <tr th:if="${#lists.isEmpty(documentos)}"><td colspan="4">Aún no ha subido documentos.</td></tr>
+        <tr th:each="d : ${documentos}">
+            <td><b th:text="${d.tipoDocumento}"></b><br><small th:text="${d.nombreArchivo}"></small></td>
+            <td>
+                <span th:text="${d.estadoValidacion == 'APROBADO' and d.validacionAutomatica == true} ? 'Aprobado (validación automática)'
+                       : (${d.estadoValidacion == 'APROBADO'} ? 'Aprobado'
+                       : (${d.estadoValidacion == 'PENDIENTE' or d.estadoValidacion == 'EN_APROBACION'} ? 'En revisión por el comprador'
+                       : ${d.estadoValidacion}))"></span>
+                <div th:if="${d.motivoRechazo}" style="color:#9F1239;font-size:12px" th:text="'Motivo: ' + ${d.motivoRechazo}"></div>
+            </td>
+            <td th:text="${d.fechaVencimiento != null} ? ${#temporals.format(d.fechaVencimiento, 'dd/MM/yyyy')} : 'Sin vencimiento'"></td>
+            <td th:text="${#temporals.format(d.fechaCarga, 'dd/MM/yyyy HH:mm')}"></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

@@ -35,7 +35,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Pruebas de ataque: cada prueba simula a un atacante y verifica que
  * EpCore lo bloquee. Usa la configuración de seguridad real, sin base de datos.
  */
-@WebMvcTest(controllers = {UsuarioController.class, UsuarioWebController.class, com.epcore.controller.RolSistemaController.class})
+@WebMvcTest(controllers = {UsuarioController.class, UsuarioWebController.class, com.epcore.controller.RolSistemaController.class,
+        com.epcore.controller.RegistroProveedorController.class, com.epcore.controller.PortalProveedorController.class})
 @Import({SecurityConfig.class, JwtAuthenticationFilter.class, JwtService.class, LoginAttemptService.class})
 @TestPropertySource(properties = "app.jwt.secret=" + PruebasAtaqueSeguridadTest.SECRETO)
 class PruebasAtaqueSeguridadTest {
@@ -56,6 +57,21 @@ class PruebasAtaqueSeguridadTest {
 
     @MockitoBean
     private com.epcore.service.RolSistemaService rolSistemaService;
+
+    @MockitoBean
+    private com.epcore.service.portal.PortalProveedorService portalService;
+
+    @MockitoBean
+    private com.epcore.service.ProveedorDocumentoService proveedorDocumentoService;
+
+    @MockitoBean
+    private com.epcore.service.CargaDocumentoService cargaDocumentoService;
+
+    @MockitoBean
+    private com.epcore.service.proceso.ProcesoService procesoService;
+
+    @MockitoBean
+    private com.epcore.repository.proceso.AdendaRepository adendaRepository;
 
     private UserDetails auditor;
 
@@ -247,6 +263,43 @@ class PruebasAtaqueSeguridadTest {
     void apiRutaNoDeclaradaSeNiega() throws Exception {
         String token = jwtService.generateToken(usr("admin@epcore.co", com.epcore.entity.Rol.ADMIN));
         mvc.perform(get("/api/ruta-que-no-existe").header("Authorization", bearer(token)))
+                .andExpect(status().isForbidden());
+    }
+
+    // ---------- Portal de proveedores ----------
+
+    @Test
+    @DisplayName("El formulario de registro de proveedores es público")
+    void registroEsPublico() throws Exception {
+        mvc.perform(get("/registro")).andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("Sin sesión, el portal redirige al inicio de sesión")
+    void portalExigeSesion() throws Exception {
+        mvc.perform(get("/portal")).andExpect(status().is3xxRedirection());
+    }
+
+    @Test
+    @DisplayName("Un usuario interno (ADMIN) no entra al portal de proveedores")
+    void internoNoEntraAlPortal() throws Exception {
+        mvc.perform(get("/portal").with(user(usr("admin@epcore.co", com.epcore.entity.Rol.ADMIN))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("Un proveedor entra a su portal")
+    void proveedorEntraAlPortal() throws Exception {
+        when(portalService.proveedorDe("prov@empresa.co")).thenReturn(com.epcore.entity.Proveedor.builder()
+                .idProveedor(2L).razonSocial("Brillo Express Ltda").nit("900.640.118-0").build());
+        mvc.perform(get("/portal").with(user(usr("prov@empresa.co", com.epcore.entity.Rol.PROVEEDOR))))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("CSRF: subir un documento al portal sin token CSRF se rechaza")
+    void portalExigeCsrf() throws Exception {
+        mvc.perform(post("/portal/documentos").with(user(usr("prov@empresa.co", com.epcore.entity.Rol.PROVEEDOR))))
                 .andExpect(status().isForbidden());
     }
 }

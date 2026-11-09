@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${proceso.codigo} + ' - EPCORE'">Proceso</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <style>
+        .acciones form { display:inline-block; margin:4px 6px 4px 0; }
+        .bloque { background:#F8FAFC; border-radius:10px; padding:12px 16px; margin:12px 0; }
+        .pendiente { color:#9F1239; font-size:12px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 th:text="${proceso.nombre}"></h1>
+    <p class="subtitle">
+        <span th:text="${proceso.codigo}"></span> · <span th:text="${proceso.entidadContratante}"></span> ·
+        <span th:text="${proceso.modalidad}"></span> · <span th:text="${proceso.visibilidad}"></span> ·
+        <b th:text="${proceso.estado}"></b>
+    </p>
+
+    <p th:if="${mensajeExito}" th:text="${mensajeExito}" style="color:#166534;font-weight:600"></p>
+    <p th:if="${mensajeError}" th:text="${mensajeError}" style="color:#9F1239;font-weight:600"></p>
+    <a th:href="@{/procesos}" class="link">Volver a procesos</a>
+
+    <div class="bloque">
+        <b>Presupuesto:</b> <span th:text="${'$ ' + #numbers.formatDecimal(proceso.presupuesto, 0, 'POINT', 0, 'COMMA')}"></span>
+        &nbsp;·&nbsp; <b>Cierre:</b> <span th:text="${#temporals.format(proceso.fechaCierre, 'dd/MM/yyyy HH:mm')}"></span><br>
+        <small>Creado por <span th:text="${proceso.creadoPor}"></span>
+            <span th:if="${proceso.aprobadoNivel1Por}" th:text="' · 1/2 Director: ' + ${proceso.aprobadoNivel1Por}"></span>
+            <span th:if="${proceso.aprobadoNivel2Por}" th:text="' · 2/2 Supervisor: ' + ${proceso.aprobadoNivel2Por}"></span>
+            <span th:if="${proceso.adjudicadoPor}" th:text="' · Cerrado por: ' + ${proceso.adjudicadoPor}"></span></small>
+        <div th:if="${proceso.observacionCierre}" th:text="${proceso.observacionCierre}" style="margin-top:6px"></div>
+        <div th:if="${proceso.adjudicadoA}" style="color:#166534;font-weight:600;margin-top:6px"
+             th:text="'Adjudicado a ' + ${proceso.adjudicadoA.razonSocial}"></div>
+    </div>
+
+    <!-- Acciones según estado y permiso -->
+    <div class="acciones">
+        <form sec:authorize="hasAuthority('PROCESOS_CREAR')" th:if="${proceso.estado.name() == 'BORRADOR'}"
+              th:action="@{/procesos/{id}/enviar(id=${proceso.idProceso})}" method="post">
+            <button type="submit">Enviar a aprobación</button></form>
+        <form sec:authorize="hasAuthority('PROCESOS_APROBAR_NIVEL_1')"
+              th:if="${proceso.estado.name() == 'EN_APROBACION' and proceso.aprobadoNivel1Por == null}"
+              th:action="@{/procesos/{id}/aprobar1(id=${proceso.idProceso})}" method="post">
+            <button type="submit">Aprobar términos (1/2)</button></form>
+        <form sec:authorize="hasAuthority('PROCESOS_APROBAR_NIVEL_2')"
+              th:if="${proceso.estado.name() == 'EN_APROBACION' and proceso.aprobadoNivel1Por != null}"
+              th:action="@{/procesos/{id}/aprobar2(id=${proceso.idProceso})}" method="post">
+            <button type="submit">Aprobar y publicar (2/2)</button></form>
+        <form sec:authorize="hasAnyAuthority('PROCESOS_APROBAR_NIVEL_1','PROCESOS_APROBAR_NIVEL_2')"
+              th:if="${proceso.estado.name() == 'EN_APROBACION'}"
+              th:action="@{/procesos/{id}/devolver(id=${proceso.idProceso})}" method="post">
+            <input name="motivo" placeholder="Motivo de la devolución" minlength="10" required>
+            <button type="submit">Devolver</button></form>
+        <form sec:authorize="hasAuthority('PROCESOS_CREAR')" th:if="${proceso.estado.name() == 'PUBLICADO'}"
+              th:action="@{/procesos/{id}/cerrar(id=${proceso.idProceso})}" method="post"
+              onsubmit="return confirm('¿Cerrar la recepción de ofertas? Después no se aceptan más.');">
+            <button type="submit">Cerrar recepción de ofertas</button></form>
+        <form sec:authorize="hasAuthority('PROCESOS_ADJUDICAR')" th:if="${proceso.estado.name() == 'EN_EVALUACION'}"
+              th:action="@{/procesos/{id}/adjudicar(id=${proceso.idProceso})}" method="post"
+              onsubmit="return confirm('¿Adjudicar a la oferta habilitada con mayor puntaje?');">
+            <button type="submit">Adjudicar</button></form>
+        <form sec:authorize="hasAuthority('PROCESOS_ADJUDICAR')" th:if="${proceso.estado.name() == 'EN_EVALUACION'}"
+              th:action="@{/procesos/{id}/desierto(id=${proceso.idProceso})}" method="post">
+            <input name="motivo" placeholder="Motivo para declararlo desierto" minlength="15" required>
+            <button type="submit">Declarar desierto</button></form>
+    </div>
+
+    <h3>Requisitos habilitantes</h3>
+    <ul>
+        <li th:text="'Liquidez mínima: ' + ${proceso.requisitos.liquidezMinima}"></li>
+        <li th:text="'Endeudamiento máximo: ' + ${proceso.requisitos.endeudamientoMaximo}"></li>
+        <li th:text="'Cobertura de intereses mínima: ' + ${proceso.requisitos.coberturaInteresesMinima}"></li>
+        <li th:text="'Patrimonio mínimo: ' + ${proceso.requisitos.patrimonioMinimoPct} + ' % del presupuesto'"></li>
+        <li th:text="'Contratos certificados mínimos: ' + ${proceso.requisitos.contratosMinimos} + ' · experiencia ≥ ' + ${proceso.requisitos.experienciaMinimaPct} + ' % del presupuesto'"></li>
+        <li th:text="'SARLAFT exigido: ' + (${proceso.requisitos.exigirSarlaft} ? 'sí' : 'no') + ' · documentos aprobados al 100 %: ' + (${proceso.requisitos.exigirDocumentosAprobados} ? 'sí' : 'no')"></li>
+    </ul>
+
+    <h3>Factores de puntaje</h3>
+    <p th:text="'Precio ' + ${proceso.factores.precio} + ' · Técnica ' + ${proceso.factores.tecnica} + ' · Plazo ' + ${proceso.factores.plazo}
+              + ' · Experiencia ' + ${proceso.factores.experiencia} + ' · Desempeño ' + ${proceso.factores.desempeno}
+              + ' · Industria nacional ' + ${proceso.factores.industriaNacional}"></p>
+
+    <h3 th:if="${proceso.visibilidad.name() == 'INVITACION'}">Proveedores invitados</h3>
+    <p th:if="${proceso.visibilidad.name() == 'INVITACION'}">
+        <span th:each="i, it : ${proceso.invitados}" th:text="${i.razonSocial} + (${it.last} ? '' : ' · ')"></span>
+    </p>
+
+    <h3>Ofertas (<span th:text="${#lists.size(ofertas)}"></span>)</h3>
+    <table>
+        <thead><tr><th>Proponente</th><th>Valor</th><th>Plazo</th><th>Canal</th><th>Técnica</th></tr></thead>
+        <tbody>
+        <tr th:if="${#lists.isEmpty(ofertas)}"><td colspan="5">Aún no hay ofertas.</td></tr>
+        <tr th:each="o : ${ofertas}">
+            <td th:text="${o.proveedor.razonSocial}"></td>
+            <td th:text="${'$ ' + #numbers.formatDecimal(o.valor, 0, 'POINT', 0, 'COMMA')}"></td>
+            <td th:text="${o.plazoDias} + ' días'"></td>
+            <td th:text="${o.canal}"></td>
+            <td>
+                <span th:if="${o.calificacionTecnica != null}" th:text="${o.calificacionTecnica}"></span>
+                <form sec:authorize="hasAuthority('PROCESOS_EVALUAR_TECNICO')" th:if="${proceso.estado.name() == 'EN_EVALUACION'}"
+                      th:action="@{/procesos/{id}/calificar/{o}(id=${proceso.idProceso},o=${o.idOferta})}" method="post" style="display:inline">
+                    <input name="calificacion" type="number" min="0" max="100" required style="width:70px">
+                    <button type="submit">Calificar</button></form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <div sec:authorize="hasAuthority('PROCESOS_CREAR')" th:if="${proceso.estado.name() == 'PUBLICADO'}" class="bloque">
+        <b>Registrar oferta recibida por otro canal</b>
+        <form th:action="@{/procesos/{id}/oferta(id=${proceso.idProceso})}" method="post">
+            <select name="idProveedor" required>
+                <option th:each="p : ${proveedores}" th:value="${p.idProveedor}" th:text="${p.razonSocial}"></option>
+            </select>
+            <input name="valor" type="number" min="1" placeholder="Valor (COP)" required>
+            <input name="plazoDias" type="number" min="1" placeholder="Plazo (días)" required>
+            <label style="font-weight:normal"><input type="checkbox" name="industriaNacional" value="true"> Industria nacional</label>
+            <label style="font-weight:normal"><input type="checkbox" name="declaracion" value="true" required> Declaración de no conflicto firmada</label>
+            <button type="submit">Registrar</button>
+        </form>
+    </div>
+
+    <div th:if="${!#lists.isEmpty(evaluacion)}">
+        <h3>Evaluación</h3>
+        <table>
+            <thead><tr><th>Proponente</th><th>Resultado</th><th>Puntaje</th></tr></thead>
+            <tbody>
+            <tr th:each="r : ${evaluacion}">
+                <td th:text="${nombres[r.idProveedor()]}"></td>
+                <td>
+                    <span th:if="${r.habilitada()}" style="color:#166534">Habilitada</span>
+                    <span th:unless="${r.habilitada()}" style="color:#9F1239">No habilitada</span>
+                    <div class="pendiente" th:each="i : ${r.incumplimientos()}" th:text="${i}"></div>
+                </td>
+                <td>
+                    <b th:if="${r.total() != null}" th:text="${r.total()}"></b>
+                    <span th:if="${r.habilitada() and r.pendienteCalificacion()}" class="pendiente">Falta calificación técnica</span>
+                    <div style="font-size:12px;color:#64748B" th:text="${r.detalle()}"></div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3>Adendas (<span th:text="${#lists.size(adendas)}"></span>)</h3>
+    <div th:each="a : ${adendas}" class="bloque">
+        <b th:text="'Adenda No. ' + ${a.numero}"></b> · <span th:text="${a.emitidaPor}"></span> ·
+        <span th:text="${#temporals.format(a.fechaEmision, 'dd/MM/yyyy HH:mm')}"></span><br>
+        <span th:text="${a.justificacion}"></span>
+        <pre style="white-space:pre-wrap;font-family:inherit;color:#475569" th:text="${a.cambios}"></pre>
+    </div>
+    <form sec:authorize="hasAuthority('PROCESOS_CREAR')" th:if="${proceso.estado.name() == 'PUBLICADO'}"
+          th:action="@{/procesos/{id}/adenda(id=${proceso.idProceso})}" method="post" class="bloque">
+        <b>Emitir adenda (ampliar el cierre)</b><br>
+        <input name="nuevoCierre" type="datetime-local" required>
+        <input name="justificacion" placeholder="Justificación (mínimo 15 caracteres)" minlength="15" required style="width:420px">
+        <button type="submit">Emitir adenda</button>
+    </form>
+</div>
+</body>
+</html>

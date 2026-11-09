@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Registro de proveedores - EPCORE</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+<div class="container" style="max-width:720px">
+    <h1>Registro en el portal de proveedores</h1>
+    <p class="subtitle">Regístrese una sola vez para subir sus documentos, ver los procesos a los que lo inviten y presentar ofertas.
+        Su información queda sujeta a verificación del comprador.</p>
+
+    <p th:if="${mensajeError}" th:text="${mensajeError}"
+       style="color:#9F1239;font-weight:600;background:#FDE8EE;padding:10px 12px;border-radius:8px"></p>
+
+    <form th:action="@{/registro}" method="post">
+        <label>Razón social</label>
+        <input name="razonSocial" th:value="${razonSocial}" required maxlength="150">
+        <br><br>
+        <label>NIT con dígito de verificación</label>
+        <input name="nit" th:value="${nit}" placeholder="901.234.567-7" required>
+        <br><br>
+        <label>Ciudad</label>
+        <input name="ciudad" th:value="${ciudad}" required maxlength="80">
+        <br><br>
+        <label>Representante legal</label>
+        <input name="representante" th:value="${representante}" required maxlength="120">
+        <br><br>
+        <label>Teléfono</label>
+        <input name="telefono" th:value="${telefono}" maxlength="30">
+        <br><br>
+        <label>Correo corporativo (será su usuario)</label>
+        <input name="correo" type="email" th:value="${correo}" required maxlength="120">
+        <br><br>
+        <label>Contraseña (mínimo 8 caracteres, con letras y números)</label>
+        <input name="clave" type="password" required minlength="8" autocomplete="new-password">
+        <br><br>
+        <label>Confirmar contraseña</label>
+        <input name="claveConfirmacion" type="password" required minlength="8" autocomplete="new-password">
+        <br><br>
+        <label style="font-weight:normal">
+            <input type="checkbox" name="autorizacionDatos" value="true" required>
+            Autorizo el tratamiento de mis datos personales conforme a la Ley 1581 de 2012.
+        </label>
+        <br><br>
+        <button type="submit">Crear cuenta</button>
+        &nbsp; <a th:href="@{/login}" class="link">Ya tengo cuenta</a>
+    </form>
+</div>
+</body>
+</html>

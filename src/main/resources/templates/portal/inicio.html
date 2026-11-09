@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Portal de proveedores - EPCORE</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+<div class="container">
+    <h1 th:text="${proveedor.razonSocial}">Proveedor</h1>
+    <p class="subtitle">
+        NIT <span th:text="${proveedor.nit}"></span> · Portal de proveedores.
+        Solo usted ve esta información; las evaluaciones internas, las ofertas de otros proponentes y la consulta SARLAFT son confidenciales.
+    </p>
+
+    <a th:href="@{/portal/documentos}" class="link">Mis documentos</a> &nbsp;|&nbsp;
+    <a th:href="@{/portal/procesos}" class="link">Procesos y ofertas</a> &nbsp;|&nbsp;
+    <form th:action="@{/logout}" method="post" style="display:inline">
+        <button type="submit" class="link" style="background:none;border:none;padding:0;cursor:pointer;font:inherit;text-decoration:underline">Cerrar sesión</button>
+    </form>
+
+    <div style="display:flex;gap:16px;margin:20px 0;flex-wrap:wrap">
+        <div style="background:#F8FAFC;border-radius:10px;padding:14px 18px">
+            <small>Documentación obligatoria aprobada</small><br>
+            <b style="font-size:22px" th:text="${cumplimiento} + ' %'"></b>
+        </div>
+        <div style="background:#F8FAFC;border-radius:10px;padding:14px 18px">
+            <small>Documentos por corregir</small><br>
+            <b style="font-size:22px" th:text="${#lists.size(porCorregir)}"></b>
+        </div>
+        <div style="background:#F8FAFC;border-radius:10px;padding:14px 18px">
+            <small>Procesos recibiendo ofertas</small><br>
+            <b style="font-size:22px" th:text="${#lists.size(abiertos)}"></b>
+        </div>
+    </div>
+
+    <h3>Lo que necesita corregir</h3>
+    <p th:if="${#lists.isEmpty(porCorregir)}">No tiene documentos rechazados ni vencidos.</p>
+    <ul>
+        <li th:each="d : ${porCorregir}">
+            <b th:text="${d.tipoDocumento}"></b> — <span th:text="${d.estadoValidacion}"></span>
+            <span th:if="${d.motivoRechazo}" th:text="': ' + ${d.motivoRechazo}"></span>
+        </li>
+    </ul>
+
+    <h3>Procesos abiertos para usted</h3>
+    <p th:if="${#lists.isEmpty(abiertos)}">No hay procesos recibiendo ofertas en este momento.</p>
+    <ul>
+        <li th:each="pr : ${abiertos}">
+            <a th:href="@{/portal/procesos/{id}(id=${pr.idProceso})}" class="link" th:text="${pr.codigo} + ' · ' + ${pr.nombre}"></a>
+            — cierra el <span th:text="${#temporals.format(pr.fechaCierre, 'dd/MM/yyyy HH:mm')}"></span>
+        </li>
+    </ul>
+</div>
+</body>
+</html>

@@ -87,6 +87,21 @@ public class SecurityConfig {
                         .sessionFixation(fixation -> fixation.changeSessionId()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/error").permitAll()
+                        // Portal de proveedores: registro público; el resto solo con permiso de portal.
+                        .requestMatchers("/registro").permitAll()
+                        .requestMatchers("/portal/**").hasAuthority(Permiso.PORTAL_PROVEEDOR.name())
+                        // Procesos de contratación: cada acción con su permiso.
+                        .requestMatchers(HttpMethod.POST, "/procesos/*/aprobar1").hasAuthority(Permiso.PROCESOS_APROBAR_NIVEL_1.name())
+                        .requestMatchers(HttpMethod.POST, "/procesos/*/aprobar2").hasAuthority(Permiso.PROCESOS_APROBAR_NIVEL_2.name())
+                        .requestMatchers(HttpMethod.POST, "/procesos/*/devolver")
+                        .hasAnyAuthority(Permiso.PROCESOS_APROBAR_NIVEL_1.name(), Permiso.PROCESOS_APROBAR_NIVEL_2.name())
+                        .requestMatchers(HttpMethod.POST, "/procesos/*/calificar/*").hasAuthority(Permiso.PROCESOS_EVALUAR_TECNICO.name())
+                        .requestMatchers(HttpMethod.POST, "/procesos/*/adjudicar", "/procesos/*/desierto").hasAuthority(Permiso.PROCESOS_ADJUDICAR.name())
+                        .requestMatchers(HttpMethod.POST, "/procesos/**").hasAuthority(Permiso.PROCESOS_CREAR.name())
+                        .requestMatchers("/procesos/nuevo").hasAuthority(Permiso.PROCESOS_CREAR.name())
+                        .requestMatchers("/procesos/**").hasAnyAuthority(Permiso.PROCESOS_CREAR.name(),
+                                Permiso.PROCESOS_APROBAR_NIVEL_1.name(), Permiso.PROCESOS_APROBAR_NIVEL_2.name(),
+                                Permiso.PROCESOS_EVALUAR_TECNICO.name(), Permiso.PROCESOS_ADJUDICAR.name(), Permiso.AUDITORIA_VER.name())
                         .requestMatchers("/usuarios/**").hasAuthority(Permiso.USUARIOS_GESTIONAR.name())
                         .requestMatchers("/roles/**").hasAuthority(Permiso.ROLES_GESTIONAR.name())
                         .requestMatchers("/criterios/nuevo", "/criterios/guardar", "/criterios/editar/**", "/criterios/eliminar/**")
@@ -111,8 +126,10 @@ public class SecurityConfig {
                             loginAttemptService.registrarExito(authentication.getName());
                             boolean veEvaluaciones = authentication.getAuthorities().stream()
                                     .anyMatch(a -> Permiso.EVALUACIONES_VER.name().equals(a.getAuthority()));
+                            boolean esProveedor = authentication.getAuthorities().stream()
+                                    .anyMatch(a -> Permiso.PORTAL_PROVEEDOR.name().equals(a.getAuthority()));
                             response.sendRedirect(request.getContextPath()
-                                    + (veEvaluaciones ? "/evaluaciones" : "/proveedores"));
+                                    + (esProveedor ? "/portal" : veEvaluaciones ? "/evaluaciones" : "/proveedores"));
                         })
                         .failureHandler((request, response, exception) -> {
                             if (exception instanceof BadCredentialsException) {

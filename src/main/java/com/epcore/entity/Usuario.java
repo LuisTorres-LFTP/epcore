@@ -32,6 +32,12 @@ public class Usuario {
     @JoinColumn(name = "id_rol_personalizado")
     private RolSistema perfil;
 
+    /** Empresa a la que pertenece un usuario con rol PROVEEDOR (portal). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_proveedor")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private Proveedor proveedor;
+
     @Column(nullable = false)
     private Boolean activo = true;
 
@@ -86,6 +92,14 @@ public class Usuario {
 
     public void setRol(Rol rol) {
         this.rol = rol;
+    }
+
+    public Proveedor getProveedor() {
+        return proveedor;
+    }
+
+    public void setProveedor(Proveedor proveedor) {
+        this.proveedor = proveedor;
     }
 
     public RolSistema getPerfil() {

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Procesos de contratación - EPCORE</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+<div class="container">
+    <h1>Procesos de contratación</h1>
+    <p class="subtitle">Solicitudes de propuestas de entidades financieras, convocatorias privadas y licitaciones públicas.
+        Ciclo: borrador → aprobación dual → publicación → ofertas y adendas → evaluación → adjudicación.</p>
+
+    <p th:if="${mensajeExito}" th:text="${mensajeExito}" style="color:#166534;font-weight:600"></p>
+    <p th:if="${mensajeError}" th:text="${mensajeError}" style="color:#9F1239;font-weight:600"></p>
+
+    <a sec:authorize="hasAuthority('PROCESOS_CREAR')" th:href="@{/procesos/nuevo}" class="link">+ Nuevo proceso</a>
+    <span sec:authorize="hasAuthority('PROCESOS_CREAR')">&nbsp; | &nbsp;</span>
+    <a th:href="@{/proveedores}" class="link">Ver proveedores</a>
+
+    <table>
+        <thead>
+        <tr><th>Código</th><th>Objeto</th><th>Modalidad</th><th>Presupuesto</th><th>Cierre</th><th>Estado</th></tr>
+        </thead>
+        <tbody>
+        <tr th:if="${#lists.isEmpty(procesos)}"><td colspan="6">Todavía no hay procesos.</td></tr>
+        <tr th:each="p : ${procesos}">
+            <td><a th:href="@{/procesos/{id}(id=${p.idProceso})}" class="link" th:text="${p.codigo}"></a></td>
+            <td><span th:text="${p.nombre}"></span><br><small th:text="${p.entidadContratante}"></small></td>
+            <td th:text="${p.modalidad.name() == 'PUBLICA'} ? 'Licitación pública' : (${p.modalidad.name() == 'FINANCIERA'} ? 'Entidad financiera' : 'Privada')"></td>
+            <td th:text="${'$ ' + #numbers.formatDecimal(p.presupuesto, 0, 'POINT', 0, 'COMMA')}"></td>
+            <td th:text="${#temporals.format(p.fechaCierre, 'dd/MM/yyyy HH:mm')}"></td>
+            <td><span class="badge" th:text="${p.estado}"></span></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

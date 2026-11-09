@@ -39,6 +39,7 @@
         </span>
 
         <a th:href="@{/proveedores}" class="link">Ver proveedores</a>
+        <span sec:authorize="hasAnyAuthority('PROCESOS_CREAR','PROCESOS_APROBAR_NIVEL_1','PROCESOS_APROBAR_NIVEL_2','PROCESOS_EVALUAR_TECNICO','PROCESOS_ADJUDICAR','AUDITORIA_VER')">&nbsp; | &nbsp; <a th:href="@{/procesos}" class="link">Procesos de contratación</a></span>
         &nbsp; | &nbsp;
 
         <a th:href="@{/criterios}" class="link">Ver criterios</a>
