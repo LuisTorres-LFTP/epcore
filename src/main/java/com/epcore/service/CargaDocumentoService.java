@@ -17,7 +17,7 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Carga segura de documentos de proveedores (usada por el portal):
+ * Carga segura de documentos de proveedores (portal y pantalla interna, un solo camino):
  * extensión permitida, tamaño máximo, firma real del archivo, nombre interno
  * aleatorio, ruta controlada y validación automática de NIT y fechas.
  */
@@ -42,8 +42,19 @@ public class CargaDocumentoService {
         this.directorio = directorio;
     }
 
+    /** Datos del documento. En el portal siempre es obligatorio y sin observación. */
+    public record Datos(String tipoDocumento, LocalDate expedicion, LocalDate vencimiento, boolean obligatorio, String observacion) { }
+
+    /** Carga desde el portal del proveedor. */
     public ProveedorDocumento cargar(Proveedor proveedor, String tipoDocumento, LocalDate expedicion,
                                      LocalDate vencimiento, MultipartFile archivo, String usuario) throws IOException {
+        return cargar(proveedor, new Datos(tipoDocumento, expedicion, vencimiento, true, null), archivo, usuario);
+    }
+
+    public ProveedorDocumento cargar(Proveedor proveedor, Datos datos, MultipartFile archivo, String usuario) throws IOException {
+        String tipoDocumento = datos.tipoDocumento();
+        LocalDate expedicion = datos.expedicion();
+        LocalDate vencimiento = datos.vencimiento();
         if (proveedor == null || proveedor.getIdProveedor() == null) throw new IllegalArgumentException("Proveedor no válido.");
         if (tipoDocumento == null || tipoDocumento.isBlank()) throw new IllegalArgumentException("Seleccione el tipo de documento.");
         if (archivo == null || archivo.isEmpty()) throw new IllegalArgumentException("Debe seleccionar un archivo.");
@@ -78,7 +89,8 @@ public class CargaDocumentoService {
         d.setFechaExpedicion(expedicion);
         d.setFechaVencimiento(vencimiento);
         d.setTieneVencimiento(vencimiento != null);
-        d.setObligatorio(true);
+        d.setObligatorio(datos.obligatorio());
+        d.setObservacion(datos.observacion());
         d.setActivo(true);
         d.setCargadoPor(usuario);
         d.setValidacionAutomatica(v.automatico());
@@ -105,7 +117,7 @@ public class CargaDocumentoService {
     }
 
     /** Revisa la firma de los primeros bytes: un ejecutable renombrado como .pdf no pasa. */
-    static boolean contenidoCoincide(MultipartFile archivo, String ext) {
+    public static boolean contenidoCoincide(MultipartFile archivo, String ext) {
         byte[] c = new byte[8];
         int n;
         try (InputStream in = archivo.getInputStream()) {

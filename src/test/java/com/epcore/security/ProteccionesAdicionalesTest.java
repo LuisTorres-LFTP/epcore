@@ -4,7 +4,6 @@ import com.epcore.config.JwtService;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
 
-import java.lang.reflect.Method;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -25,12 +24,9 @@ class ProteccionesAdicionalesTest {
                         .password("x").roles("ADMIN").build()));
     }
 
-    private static boolean contenidoValido(String nombre, byte[] datos, String extension) throws Exception {
-        Method m = com.epcore.controller.ProveedorDocumentoWebController.class
-                .getDeclaredMethod("contenidoCoincideConExtension",
-                        org.springframework.web.multipart.MultipartFile.class, String.class);
-        m.setAccessible(true);
-        return (boolean) m.invoke(null, new MockMultipartFile("archivo", nombre, null, datos), extension);
+    private static boolean contenidoValido(String nombre, byte[] datos, String extension) {
+        return com.epcore.service.CargaDocumentoService.contenidoCoincide(
+                new MockMultipartFile("archivo", nombre, null, datos), extension);
     }
 
     @Test

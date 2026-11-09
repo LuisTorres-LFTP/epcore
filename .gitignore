@@ -39,3 +39,6 @@ build/
 
 # IDE / local files
 *.log
+
+# Configuración local de clientes (contiene claves)
+config/clientes.properties

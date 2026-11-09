@@ -1,0 +1,61 @@
+# Revisión automática: en cada push o pull request compila EpCore, corre todas las
+# pruebas y arranca la aplicación contra una base MySQL vacía (prueba las migraciones).
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: epcore_ci
+          MYSQL_USER: epcore_ci
+          MYSQL_PASSWORD: epcore_ci_solo_pruebas
+          MYSQL_ROOT_PASSWORD: epcore_ci_root_solo_pruebas
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    env:
+      # Valores solo para esta base temporal de pruebas; no son credenciales reales.
+      DB_URL: jdbc:mysql://127.0.0.1:3306/epcore_ci?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Bogota
+      DB_USERNAME: epcore_ci
+      DB_PASSWORD: epcore_ci_solo_pruebas
+      JWT_SECRET: ci-secreto-temporal-solo-para-pruebas-automaticas-0123456789
+      SPRING_JPA_SHOW_SQL: "false"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Compilar y probar
+        run: |
+          chmod +x mvnw
+          ./mvnw -B -ntp verify
+
+      - name: Guardar reportes de pruebas
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reportes-pruebas
+          path: target/surefire-reports/
