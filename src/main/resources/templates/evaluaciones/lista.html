@@ -33,7 +33,7 @@
     </form>
 
     <div>
-        <span sec:authorize="hasAnyRole('ADMIN', 'ANALISTA_COMPRAS')">
+        <span sec:authorize="hasAuthority('EVALUACIONES_REGISTRAR')">
             <a th:href="@{/evaluaciones/nueva}" class="link">+ Registrar evaluación</a>
             &nbsp; | &nbsp;
         </span>
@@ -43,7 +43,7 @@
 
         <a th:href="@{/criterios}" class="link">Ver criterios</a>
 
-        <span sec:authorize="hasRole('ADMIN')">
+        <span sec:authorize="hasAuthority('USUARIOS_GESTIONAR')">
             &nbsp; | &nbsp;
             <a th:href="@{/usuarios}" class="link">Ver usuarios</a>
         </span>
@@ -264,7 +264,7 @@
                 <a th:href="@{/evaluaciones/detalle/{id}(id=${evaluacion.idEvaluacion})}"
                    class="link">Ver</a>
 
-                <span sec:authorize="hasRole('ADMIN')">
+                <span sec:authorize="hasAuthority('EVALUACIONES_ELIMINAR')">
                     &nbsp; | &nbsp;
                     <form th:action="@{/evaluaciones/eliminar/{id}(id=${evaluacion.idEvaluacion})}" method="post" style="display:inline" onsubmit="return confirm('¿Está seguro de eliminar esta evaluación?');"><button type="submit" class="link" style="background:none;border:none;padding:0;cursor:pointer;font:inherit;color:inherit;text-decoration:underline">Eliminar</button></form>
                 </span>

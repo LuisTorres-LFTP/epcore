@@ -13,14 +13,14 @@
     <h1>Criterios registrados</h1>
     <p class="subtitle">Gestión de criterios de evaluación para proveedores.</p>
 
-    <span sec:authorize="hasRole('ADMIN')">
+    <span sec:authorize="hasAuthority('CATALOGOS_GESTIONAR')">
         <a th:href="@{/criterios/nuevo}" class="link">+ Registrar criterio</a>
         &nbsp; | &nbsp;
     </span>
 
     <a th:href="@{/proveedores}" class="link">Ver proveedores</a>
     &nbsp; | &nbsp;
-    <span sec:authorize="hasRole('ADMIN')">
+    <span sec:authorize="hasAuthority('USUARIOS_GESTIONAR')">
     &nbsp; | &nbsp;
     <a th:href="@{/usuarios}" class="link">Ver usuarios</a>
     </span>
@@ -47,13 +47,13 @@
                 <span class="badge" th:text="${criterio.activo} ? 'ACTIVO' : 'INACTIVO'"></span>
             </td>
             <td>
-                <span sec:authorize="hasRole('ADMIN')">
+                <span sec:authorize="hasAuthority('CATALOGOS_GESTIONAR')">
                     <a th:href="@{/criterios/editar/{id}(id=${criterio.idCriterio})}" class="link">Editar</a>
                     |
                     <form th:action="@{/criterios/eliminar/{id}(id=${criterio.idCriterio})}" method="post" style="display:inline" onsubmit="return confirm('¿Está seguro de eliminar este criterio?');"><button type="submit" class="link" style="background:none;border:none;padding:0;cursor:pointer;font:inherit;color:inherit;text-decoration:underline">Eliminar</button></form>
                 </span>
 
-                <span sec:authorize="!hasRole('ADMIN')">
+                <span sec:authorize="!hasAuthority('CATALOGOS_GESTIONAR')">
                     Solo consulta
                 </span>
             </td>

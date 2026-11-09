@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Rol - EPCORE</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+
+<div class="container">
+    <h1 th:text="${rol.idRol == null} ? 'Crear rol' : 'Editar rol'">Rol</h1>
+    <p class="subtitle">Marque los permisos que tendrá el rol. Los cambios aplican en el próximo inicio de sesión de cada usuario.</p>
+
+    <p th:if="${mensajeError}" th:text="${mensajeError}"
+       style="color:#9F1239;font-weight:600;background:#FDE8EE;padding:10px 12px;border-radius:8px"></p>
+
+    <form th:action="@{/roles/guardar}" method="post">
+        <input type="hidden" name="idRol" th:value="${rol.idRol}">
+
+        <label for="codigo">Código</label>
+        <input id="codigo" name="codigo" th:value="${rol.codigo}" th:readonly="${rol.idRol != null}"
+               placeholder="JEFE_COMPRAS_REGIONAL" maxlength="40" required>
+        <small style="color:#64748B">Mayúsculas, números y guion bajo. No se puede cambiar después.</small>
+
+        <br><br>
+
+        <label for="nombre">Nombre</label>
+        <input id="nombre" name="nombre" th:value="${rol.nombre}" maxlength="100" required>
+
+        <br><br>
+
+        <label for="descripcion">Descripción</label>
+        <input id="descripcion" name="descripcion" th:value="${rol.descripcion}" maxlength="300">
+
+        <br><br>
+
+        <label for="limiteAprobacion">Límite de aprobación (COP)</label>
+        <input id="limiteAprobacion" name="limiteAprobacion" type="number" min="1" step="1"
+               th:value="${rol.limiteAprobacion}" placeholder="Vacío = sin límite">
+
+        <br><br>
+
+        <h3>Permisos</h3>
+        <div th:each="grupo : ${gruposPermisos}" style="margin-bottom:14px">
+            <b th:text="${grupo.key}"></b>
+            <div th:each="p : ${grupo.value}" style="margin:4px 0 0 8px">
+                <label style="font-weight:normal">
+                    <input type="checkbox" name="permisos" th:value="${p.name()}"
+                           th:checked="${rol.permisos != null and #sets.contains(rol.permisos, p)}">
+                    <span th:text="${p.descripcion}"></span>
+                    <small style="color:#64748B" th:text="'(' + ${p.name()} + ')'"></small>
+                </label>
+            </div>
+        </div>
+
+        <p style="font-size:13px;color:#475569;background:#E8F0FE;padding:10px 12px;border-radius:8px">
+            Reglas que EpCore no permite romper: un mismo rol no puede aprobar en los dos niveles,
+            quien crea procesos no puede adjudicarlos ni aprobarlos como supervisor, quien administra
+            permisos no puede ser aprobador final, y un rol de proveedor no puede tener permisos internos.
+        </p>
+
+        <button type="submit">Guardar rol</button>
+        &nbsp;
+        <a th:href="@{/roles}" class="link">Cancelar</a>
+    </form>
+</div>
+
+</body>
+</html>

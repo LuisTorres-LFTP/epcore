@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Roles y permisos - EPCORE</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+
+<div class="container">
+    <h1>Roles y permisos</h1>
+    <p class="subtitle">
+        Cada rol es un conjunto de permisos. Los roles predefinidos no se pueden eliminar;
+        puede ajustar sus permisos o crear roles propios. EpCore impide combinaciones
+        que violen la separación de funciones.
+    </p>
+
+    <p th:if="${mensajeExito}" th:text="${mensajeExito}" style="color:#166534;font-weight:600"></p>
+    <p th:if="${mensajeError}" th:text="${mensajeError}" style="color:#9F1239;font-weight:600"></p>
+
+    <a th:href="@{/roles/nuevo}" class="link">+ Crear rol</a>
+    &nbsp; | &nbsp;
+    <a th:href="@{/usuarios}" class="link">Ver usuarios</a>
+
+    <table>
+        <thead>
+        <tr>
+            <th>Código</th>
+            <th>Nombre</th>
+            <th>Tipo</th>
+            <th>Permisos</th>
+            <th>Límite de aprobación</th>
+            <th>Estado</th>
+            <th>Última modificación</th>
+            <th>Acciones</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="rol : ${roles}">
+            <td th:text="${rol.codigo}"></td>
+            <td>
+                <b th:text="${rol.nombre}"></b>
+                <div style="font-size:12px;color:#64748B" th:text="${rol.descripcion}"></div>
+            </td>
+            <td th:text="${rol.predefinido} ? 'Predefinido' : 'Del cliente'"></td>
+            <td>
+                <span th:text="${#sets.size(rol.permisos)} + ' permiso(s)'"></span>
+                <div style="font-size:11px;color:#64748B;max-width:340px">
+                    <span th:each="p, it : ${rol.permisos}" th:text="${p.descripcion} + (${it.last} ? '' : ' · ')"></span>
+                </div>
+            </td>
+            <td th:text="${rol.limiteAprobacion != null} ? ${'$ ' + #numbers.formatDecimal(rol.limiteAprobacion, 0, 'POINT', 0, 'COMMA')} : 'Sin límite'"></td>
+            <td><span class="badge" th:text="${rol.activo} ? 'ACTIVO' : 'INACTIVO'"></span></td>
+            <td style="font-size:12px">
+                <span th:text="${rol.modificadoPor}"></span><br>
+                <span th:if="${rol.fechaModificacion != null}"
+                      th:text="${#temporals.format(rol.fechaModificacion, 'dd/MM/yyyy HH:mm')}"></span>
+            </td>
+            <td>
+                <a th:href="@{/roles/editar/{id}(id=${rol.idRol})}" class="link">Editar</a>
+                <span th:if="${!rol.predefinido and rol.activo}">
+                    &nbsp; | &nbsp;
+                    <form th:action="@{/roles/desactivar/{id}(id=${rol.idRol})}" method="post" style="display:inline"
+                          onsubmit="return confirm('¿Desactivar este rol? Los usuarios que lo tengan perderán sus permisos.');">
+                        <button type="submit" class="link"
+                                style="background:none;border:none;padding:0;cursor:pointer;font:inherit;color:inherit;text-decoration:underline">
+                            Desactivar
+                        </button>
+                    </form>
+                </span>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+</body>
+</html>

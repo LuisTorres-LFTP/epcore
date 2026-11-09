@@ -116,7 +116,7 @@
     <!-- NAVEGACIÓN PRINCIPAL -->
     <div class="navegacion-proveedores">
 
-        <span sec:authorize="hasAnyRole('ADMIN', 'ANALISTA_COMPRAS')">
+        <span sec:authorize="hasAuthority('PROVEEDORES_GESTIONAR')">
             <a th:href="@{/proveedores/nuevo}" class="link">
                 + Registrar proveedor
             </a>
@@ -127,7 +127,7 @@
             Ver criterios
         </a>
 
-        <span sec:authorize="hasRole('ADMIN')">
+        <span sec:authorize="hasAuthority('USUARIOS_GESTIONAR')">
             &nbsp; | &nbsp;
             <a th:href="@{/usuarios}" class="link">
                 Ver usuarios
@@ -183,7 +183,7 @@
                     <div class="acciones-proveedor">
 
                         <!-- EDITAR -->
-                        <span sec:authorize="hasAnyRole('ADMIN', 'ANALISTA_COMPRAS')">
+                        <span sec:authorize="hasAuthority('PROVEEDORES_GESTIONAR')">
 
                             <a th:href="@{/proveedores/editar/{idProveedor}(idProveedor=${proveedor.idProveedor})}"
                                class="accion-btn accion-editar">
@@ -199,14 +199,14 @@
                         </a>
 
                         <!-- ELIMINAR -->
-                        <span sec:authorize="hasRole('ADMIN')">
+                        <span sec:authorize="hasAuthority('PROVEEDORES_ELIMINAR')">
 
                             <form th:action="@{/proveedores/eliminar/{idProveedor}(idProveedor=${proveedor.idProveedor})}" method="post" style="display:inline" onsubmit="return confirm('¿Está seguro de eliminar este proveedor?');"><button type="submit" class="accion-btn accion-eliminar">Eliminar</button></form>
 
                         </span>
 
                         <!-- SOLO CONSULTA -->
-                        <span sec:authorize="hasAnyRole('GERENTE', 'AUDITOR')"
+                        <span sec:authorize="!hasAnyAuthority('PROVEEDORES_GESTIONAR', 'PROVEEDORES_ELIMINAR')"
                               class="texto-consulta">
                             Solo consulta
                         </span>

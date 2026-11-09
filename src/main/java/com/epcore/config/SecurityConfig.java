@@ -88,6 +88,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/error").permitAll()
                         .requestMatchers("/usuarios/**").hasAuthority(Permiso.USUARIOS_GESTIONAR.name())
+                        .requestMatchers("/roles/**").hasAuthority(Permiso.ROLES_GESTIONAR.name())
                         .requestMatchers("/criterios/nuevo", "/criterios/guardar", "/criterios/editar/**", "/criterios/eliminar/**")
                         .hasAuthority(Permiso.CATALOGOS_GESTIONAR.name())
                         .requestMatchers("/criterios/**").hasAnyAuthority(Permiso.EVALUACIONES_VER.name(), Permiso.CATALOGOS_GESTIONAR.name())

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es"
-      xmlns:th="http://www.thymeleaf.org">
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 
 <head>
     <meta charset="UTF-8">
@@ -122,7 +123,7 @@
                 </p>
             </div>
 
-            <a th:href="@{/proveedores/nuevo}"
+            <a sec:authorize="hasAuthority('PROVEEDORES_GESTIONAR')" th:href="@{/proveedores/nuevo}"
                class="btn btn-light">
 
                 <i class="bi bi-plus-circle me-1"></i>
@@ -225,7 +226,7 @@
                     la gestión en EPCORE.
                 </p>
 
-                <a th:href="@{/proveedores/nuevo}"
+                <a sec:authorize="hasAuthority('PROVEEDORES_GESTIONAR')" th:href="@{/proveedores/nuevo}"
                    class="btn btn-primary">
 
                     <i class="bi bi-plus-circle me-1"></i>
@@ -395,7 +396,7 @@
                                 </a>
 
                                 <!-- EDITAR -->
-                                <a th:href="@{/proveedores/editar/{id}(
+                                <a sec:authorize="hasAuthority('PROVEEDORES_GESTIONAR')" th:href="@{/proveedores/editar/{id}(
                                         id=${proveedor.idProveedor}
                                     )}"
                                    class="btn btn-sm btn-outline-warning"
@@ -431,7 +432,7 @@
                                 </a>
 
                                 <!-- ELIMINAR -->
-                                <form th:action="@{/proveedores/eliminar/{id}(
+                                <form sec:authorize="hasAuthority('PROVEEDORES_ELIMINAR')" th:action="@{/proveedores/eliminar/{id}(
                                         id=${proveedor.idProveedor}
                                     )}"
                                       method="post"

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <title>Usuarios - EPCORE</title>
@@ -12,6 +13,10 @@
     <p class="subtitle">Gestión de usuarios y roles del sistema.</p>
 
     <a th:href="@{/usuarios/nuevo}" class="link">+ Registrar usuario</a>
+    <span sec:authorize="hasAuthority('ROLES_GESTIONAR')">
+        &nbsp; | &nbsp;
+        <a th:href="@{/roles}" class="link">Roles y permisos</a>
+    </span>
     &nbsp; | &nbsp;
     <a th:href="@{/proveedores}" class="link">Ver proveedores</a>
     &nbsp; | &nbsp;
