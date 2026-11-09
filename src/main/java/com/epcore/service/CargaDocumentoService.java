@@ -29,13 +29,15 @@ public class CargaDocumentoService {
 
     private final ProveedorDocumentoService documentoService;
     private final ValidadorDocumentoPdf validador;
+    private final com.epcore.service.notificacion.NotificacionService notificaciones;
     private final Clock reloj;
     private final String directorio;
 
     public CargaDocumentoService(ProveedorDocumentoService documentoService, ValidadorDocumentoPdf validador,
-                                 Clock reloj, @Value("${epcore.archivos.directorio:uploads}") String directorio) {
+                                 com.epcore.service.notificacion.NotificacionService notificaciones, Clock reloj, @Value("${epcore.archivos.directorio:uploads}") String directorio) {
         this.documentoService = documentoService;
         this.validador = validador;
+        this.notificaciones = notificaciones;
         this.reloj = reloj;
         this.directorio = directorio;
     }
@@ -83,7 +85,14 @@ public class CargaDocumentoService {
         d.setDetalleValidacion(v.automatico() ? "Verificado por el sistema: " + String.join("; ", v.verificaciones()) : v.motivo());
         d.setEstadoValidacion(v.automatico() ? DocumentoAprobacionService.APROBADO : DocumentoAprobacionService.PENDIENTE);
         try {
-            return documentoService.guardar(d);
+            ProveedorDocumento guardado = documentoService.guardar(d);
+            if (!v.automatico()) {
+                notificaciones.notificarRol("doc-" + guardado.getIdDocumento() + "-pendiente", com.epcore.entity.Rol.DIRECTOR_COMPRAS,
+                        "Documento pendiente de revisión (1/2)",
+                        proveedor.getRazonSocial() + " cargó «" + tipoDocumento + "». El sistema no pudo validarlo automáticamente.",
+                        "/proveedores/" + proveedor.getIdProveedor() + "/documentos", true);
+            }
+            return guardado;
         } catch (RuntimeException e) {
             Files.deleteIfExists(destino);
             throw e;

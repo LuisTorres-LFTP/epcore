@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Catálogos - EPCORE</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+<div class="container">
+    <h1>Catálogos oficiales</h1>
+    <p class="subtitle">Actualización controlada del catálogo CIIU y de las listas restrictivas. Nada se borra: los códigos retirados se desactivan y las coincidencias las revisa una persona.</p>
+
+    <p th:if="${mensaje}" th:text="${mensaje}" style="color:#166534;font-weight:600"></p>
+    <p th:if="${error}" th:text="${error}" style="color:#9F1239;font-weight:600"></p>
+
+    <h2>Catálogo CIIU (DANE)</h2>
+    <p>Descargue la clasificación CIIU vigente del DANE, guárdela como CSV con las columnas <b>codigo;descripcion</b> (UTF-8) y súbala aquí.</p>
+    <form th:action="@{/catalogos/ciiu}" method="post" enctype="multipart/form-data">
+        <label>Archivo CSV <input type="file" name="archivo" accept=".csv,.txt" required></label>
+        <label>Versión <input type="text" name="version" placeholder="Rev. 4 A.C." maxlength="30"></label>
+        <button type="submit">Importar CIIU</button>
+    </form>
+
+    <div th:if="${resumenCiiu}">
+        <h3>Resultado de la importación</h3>
+        <table>
+            <tbody>
+            <tr><th>Códigos nuevos</th><td th:text="${#lists.size(resumenCiiu.nuevos)} + ' ' + ${resumenCiiu.nuevos}"></td></tr>
+            <tr><th>Descripciones actualizadas</th><td th:text="${#lists.size(resumenCiiu.modificados)} + ' ' + ${resumenCiiu.modificados}"></td></tr>
+            <tr><th>Códigos retirados (desactivados)</th><td th:text="${#lists.size(resumenCiiu.retirados)} + ' ' + ${resumenCiiu.retirados}"></td></tr>
+            <tr><th>Proveedores enviados a revisión</th><td th:text="${resumenCiiu.proveedoresAfectados}"></td></tr>
+            <tr th:unless="${#lists.isEmpty(resumenCiiu.lineasIgnoradas)}"><th>Líneas ignoradas</th>
+                <td><div th:each="l : ${resumenCiiu.lineasIgnoradas}" th:text="${l}"></div></td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h2>Listas restrictivas</h2>
+    <p>Nombres cargados: OFAC <b th:text="${conteos.get(T(com.epcore.entity.ListaRestrictiva).OFAC)}"></b>,
+        ONU <b th:text="${conteos.get(T(com.epcore.entity.ListaRestrictiva).ONU)}"></b>.
+        Al cargar una lista se cruza con todos los proveedores; las coincidencias quedan como «posible coincidencia» y se avisa al oficial de cumplimiento.</p>
+    <form th:action="@{/catalogos/listas}" method="post" enctype="multipart/form-data">
+        <label>Lista
+            <select name="lista">
+                <option value="OFAC">OFAC SDN (sdn.csv)</option>
+                <option value="ONU">ONU consolidada (consolidated.xml)</option>
+            </select>
+        </label>
+        <label>Archivo oficial <input type="file" name="archivo" accept=".csv,.xml" required></label>
+        <button type="submit">Cargar y cruzar</button>
+    </form>
+    <p class="subtitle">La descarga automática diaria se activa con <code>epcore.listas.actualizacion-automatica=true</code>.</p>
+
+    <p><a href="javascript:history.back()" class="link">Volver</a></p>
+</div>
+</body>
+</html>

@@ -27,6 +27,7 @@ public class DocumentoAprobacionService {
     public static final String RECHAZADO = "RECHAZADO";
 
     private final ProveedorDocumentoRepository repository;
+    private final com.epcore.service.notificacion.NotificacionService notificaciones;
 
     public ProveedorDocumento aprobarNivel1(Long idDocumento, String usuario) {
         ProveedorDocumento d = obtener(idDocumento);
@@ -37,6 +38,10 @@ public class DocumentoAprobacionService {
         d.setAprobadoNivel1Por(usuario);
         d.setFechaAprobacionNivel1(LocalDateTime.now());
         d.setEstadoValidacion(EN_APROBACION);
+        notificaciones.notificarRol("doc-" + d.getIdDocumento() + "-nivel1", com.epcore.entity.Rol.GERENTE,
+                "Documento pendiente de su aprobación como supervisor (2/2)",
+                "El Director de compras aprobó «" + d.getTipoDocumento() + "». Falta su aprobación como supervisor.",
+                enlace(d), true);
         return repository.save(d);
     }
 
@@ -50,6 +55,10 @@ public class DocumentoAprobacionService {
         d.setAprobadoNivel2Por(usuario);
         d.setFechaAprobacionNivel2(LocalDateTime.now());
         d.setEstadoValidacion(APROBADO);
+        if (d.getProveedor() != null) {
+            notificaciones.notificarProveedor("doc-" + d.getIdDocumento() + "-aprobado", d.getProveedor().getIdProveedor(),
+                    "Documento aprobado", "Su documento «" + d.getTipoDocumento() + "» fue aprobado.", "/portal/documentos", false);
+        }
         return repository.save(d);
     }
 
@@ -69,7 +78,21 @@ public class DocumentoAprobacionService {
         d.setFechaRechazo(LocalDateTime.now());
         d.setMotivoRechazo(motivo.trim());
         d.setEstadoValidacion(RECHAZADO);
+        if (d.getProveedor() != null) {
+            notificaciones.notificarProveedor("doc-" + d.getIdDocumento() + "-rechazado", d.getProveedor().getIdProveedor(),
+                    "Documento rechazado: debe cargarlo de nuevo",
+                    "Su documento «" + d.getTipoDocumento() + "» fue rechazado. Motivo: " + d.getMotivoRechazo(),
+                    "/portal/documentos", true);
+        }
+        if (d.getCargadoPor() != null) {
+            notificaciones.notificarCorreo("doc-" + d.getIdDocumento() + "-rechazado-int", d.getCargadoPor(),
+                    "Documento rechazado", "«" + d.getTipoDocumento() + "» fue rechazado: " + d.getMotivoRechazo(), enlace(d), false);
+        }
         return repository.save(d);
+    }
+
+    private static String enlace(ProveedorDocumento d) {
+        return d.getProveedor() == null ? "/proveedores" : "/proveedores/" + d.getProveedor().getIdProveedor() + "/documentos";
     }
 
     private ProveedorDocumento obtener(Long id) {

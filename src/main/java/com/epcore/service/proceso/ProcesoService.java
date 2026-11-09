@@ -43,6 +43,7 @@ public class ProcesoService {
     private final ConsultaSarlaftService consultaSarlaftService;
     private final ProveedorDocumentoService proveedorDocumentoService;
     private final Clock reloj;
+    private final com.epcore.service.notificacion.NotificacionService notificaciones;
 
     // ---------- Creación y requisitos ----------
 
@@ -91,6 +92,8 @@ public class ProcesoService {
         p.setEstado(EstadoProceso.EN_APROBACION);
         p.setAprobadoNivel1Por(null);
         p.setFechaAprobacionNivel1(null);
+        notificaciones.notificarRol("proc-" + id + "-enviado-" + ahora(), com.epcore.entity.Rol.DIRECTOR_COMPRAS,
+                "Proceso pendiente de aprobación (1/2)", p.getCodigo() + " · " + p.getNombre(), "/procesos/" + id, true);
         return procesoRepository.save(p);
     }
 
@@ -101,6 +104,8 @@ public class ProcesoService {
         SeparacionFunciones.validarAprobacion(usuario, p.getCreadoPor(), null);
         p.setAprobadoNivel1Por(usuario);
         p.setFechaAprobacionNivel1(ahora());
+        notificaciones.notificarRol("proc-" + id + "-nivel1-" + ahora(), com.epcore.entity.Rol.GERENTE,
+                "Proceso pendiente de su aprobación como supervisor (2/2)", p.getCodigo() + " · " + p.getNombre(), "/procesos/" + id, true);
         return procesoRepository.save(p);
     }
 
@@ -113,6 +118,14 @@ public class ProcesoService {
         p.setAprobadoNivel2Por(usuario);
         p.setFechaPublicacion(ahora());
         p.setEstado(EstadoProceso.PUBLICADO);
+        if (p.getVisibilidad() == Visibilidad.INVITACION) {
+            for (Proveedor inv : p.getInvitados()) {
+                notificaciones.notificarProveedor("proc-" + id + "-invitacion", inv.getIdProveedor(),
+                        p.getEntidadContratante() + " lo invitó a presentar oferta",
+                        p.getCodigo() + " · " + p.getNombre() + ". Cierra el " + p.getFechaCierre().toLocalDate() + ".",
+                        "/portal/procesos/" + id, true);
+            }
+        }
         return procesoRepository.save(p);
     }
 
@@ -155,6 +168,13 @@ public class ProcesoService {
 
         procesoRepository.save(p);
         int numero = (int) adendaRepository.countByProcesoIdProceso(id) + 1;
+        Set<Long> interesados = new LinkedHashSet<>();
+        p.getInvitados().forEach(i -> interesados.add(i.getIdProveedor()));
+        ofertaRepository.findByProcesoIdProceso(id).forEach(o -> interesados.add(o.getProveedor().getIdProveedor()));
+        for (Long prov : interesados) {
+            notificaciones.notificarProveedor("proc-" + id + "-adenda-" + numero, prov, "Adenda No. " + numero + " en " + p.getCodigo(),
+                    justificacion.trim(), "/portal/procesos/" + id, true);
+        }
         return adendaRepository.save(Adenda.builder().proceso(p).numero(numero).justificacion(justificacion.trim())
                 .cambios(String.join("\n", cambios)).emitidaPor(usuario).fechaEmision(ahora()).build());
     }
@@ -277,6 +297,7 @@ public class ProcesoService {
         p.setFechaAdjudicacion(ahora());
         p.setObservacionCierre("Adjudicado con " + mejor.total() + " puntos.");
         p.setEstado(EstadoProceso.ADJUDICADO);
+        avisarResultado(p);
         return procesoRepository.save(p);
     }
 
@@ -285,6 +306,7 @@ public class ProcesoService {
         exigir(p, EstadoProceso.EN_EVALUACION, "Solo se declaran desiertos procesos en evaluación.");
         if (motivo == null || motivo.trim().length() < 15) throw new IllegalArgumentException("Explique el motivo (mínimo 15 caracteres).");
         p.setEstado(EstadoProceso.DESIERTO);
+        avisarResultado(p);
         p.setAdjudicadoPor(usuario);
         p.setFechaAdjudicacion(ahora());
         p.setObservacionCierre(motivo.trim());
@@ -298,6 +320,14 @@ public class ProcesoService {
     }
 
     // ---------- Apoyo ----------
+
+    /** Cada proponente recibe el aviso de que hay resultado; el detalle lo ve solo en su portal. */
+    private void avisarResultado(Proceso p) {
+        ofertaRepository.findByProcesoIdProceso(p.getIdProceso()).forEach(o ->
+                notificaciones.notificarProveedor("proc-" + p.getIdProceso() + "-resultado", o.getProveedor().getIdProveedor(),
+                        "Se publicó el resultado de " + p.getCodigo(), "Consulte el resultado de su oferta en el portal.",
+                        "/portal/procesos/" + p.getIdProceso(), true));
+    }
 
     private EvaluadorOfertas.Entrada entrada(Proceso p, Oferta o) {
         Long idProv = o.getProveedor().getIdProveedor();

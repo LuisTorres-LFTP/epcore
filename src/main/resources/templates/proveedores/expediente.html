@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Expediente del proveedor - EPCORE</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <style>
+        .seccion { border-top:1px solid #E5EAF2; margin-top:24px; padding-top:8px; }
+        .bloque { background:#F8FAFC; border-radius:10px; padding:12px 16px; margin:10px 0; }
+        .bloque input, .bloque select { margin:3px 6px 3px 0; }
+        .estado { display:inline-block; padding:3px 10px; border-radius:999px; font-weight:600; font-size:13px; }
+        .ok { background:#E3F6EA; color:#166534; } .mal { background:#FDE8EE; color:#9F1239; } .med { background:#FEF3DC; color:#92400E; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Expediente de <span th:text="${proveedor.razonSocial}"></span></h1>
+    <p class="subtitle">NIT <span th:text="${proveedor.nit}"></span> · información financiera, experiencia, SARLAFT y clasificación.</p>
+    <p th:if="${mensajeExito}" th:text="${mensajeExito}" style="color:#166534;font-weight:600"></p>
+    <p th:if="${mensajeError}" th:text="${mensajeError}" style="color:#9F1239;font-weight:600"></p>
+    <a th:href="@{/proveedores}" class="link">Volver a proveedores</a> &nbsp;|&nbsp;
+    <a th:href="@{/proveedores/{id}/documentos(id=${proveedor.idProveedor})}" class="link">Documentos</a>
+
+    <!-- ===================== Información financiera ===================== -->
+    <div class="seccion">
+        <h2>Información financiera</h2>
+        <table>
+            <thead><tr><th>Corte</th><th>Fuente</th><th>Liquidez</th><th>Endeudamiento</th><th>Cobertura intereses</th><th>Patrimonio</th><th>Rentab. patrimonio</th></tr></thead>
+            <tbody>
+            <tr th:if="${#lists.isEmpty(financiera)}"><td colspan="7">Sin estados financieros registrados: el proveedor no puede habilitarse en procesos.</td></tr>
+            <tr th:each="i : ${financiera}">
+                <td th:text="${i.anioCorte}"></td><td th:text="${i.fuente}"></td>
+                <td th:text="${i.indiceLiquidez != null} ? ${#numbers.formatDecimal(i.indiceLiquidez, 1, 2, 'COMMA')} : 'Indeterminado'"></td>
+                <td th:text="${i.nivelEndeudamiento != null} ? ${#numbers.formatDecimal(i.nivelEndeudamiento * 100, 1, 1, 'COMMA')} + ' %' : '—'"></td>
+                <td th:text="${i.razonCoberturaIntereses != null} ? ${#numbers.formatDecimal(i.razonCoberturaIntereses, 1, 2, 'COMMA')} : 'Sin gastos de intereses'"></td>
+                <td th:text="${'$ ' + #numbers.formatDecimal(i.patrimonio, 0, 'POINT', 0, 'COMMA')}"></td>
+                <td th:text="${i.rentabilidadPatrimonio != null} ? ${#numbers.formatDecimal(i.rentabilidadPatrimonio * 100, 1, 1, 'COMMA')} + ' %' : '—'"></td>
+            </tr>
+            </tbody>
+        </table>
+        <form sec:authorize="hasAuthority('PROVEEDORES_GESTIONAR')" class="bloque"
+              th:action="@{/proveedores/{id}/expediente/financiera(id=${proveedor.idProveedor})}" method="post">
+            <b>Registrar estados financieros</b> <small>(el sistema verifica activo = pasivo + patrimonio)</small><br>
+            <input type="date" name="fechaCorte" required title="Fecha de corte">
+            <select name="fuente"><option value="ESTADOS_FINANCIEROS">Estados financieros</option><option value="RUP">RUP</option><option value="DECLARACION_RENTA">Declaración de renta</option></select><br>
+            <input type="number" name="activoCorriente" placeholder="Activo corriente" min="0" required>
+            <input type="number" name="pasivoCorriente" placeholder="Pasivo corriente" min="0" required>
+            <input type="number" name="activoTotal" placeholder="Activo total" min="0" required>
+            <input type="number" name="pasivoTotal" placeholder="Pasivo total" min="0" required>
+            <input type="number" name="patrimonio" placeholder="Patrimonio" required><br>
+            <input type="number" name="ingresosOperacionales" placeholder="Ingresos operacionales" min="0">
+            <input type="number" name="utilidadOperacional" placeholder="Utilidad operacional">
+            <input type="number" name="gastosIntereses" placeholder="Gastos de intereses" min="0">
+            <button type="submit">Guardar</button>
+        </form>
+    </div>
+
+    <!-- ===================== Experiencia ===================== -->
+    <div class="seccion">
+        <h2>Experiencia acreditada</h2>
+        <p>Experiencia acumulada (valor × % de participación): <b th:text="${'$ ' + #numbers.formatDecimal(experienciaTotal, 0, 'POINT', 0, 'COMMA')}"></b></p>
+        <table>
+            <thead><tr><th>Contratante</th><th>Objeto</th><th>UNSPSC</th><th>Valor</th><th>Participación</th><th>Estado</th><th>Certificado</th></tr></thead>
+            <tbody>
+            <tr th:if="${#lists.isEmpty(contratos)}"><td colspan="7">Sin contratos registrados.</td></tr>
+            <tr th:each="c : ${contratos}">
+                <td th:text="${c.contratante} + (${c.contratantePublico} ? ' (público)' : '')"></td>
+                <td th:text="${c.objeto}"></td><td th:text="${c.codigosUnspsc}"></td>
+                <td th:text="${'$ ' + #numbers.formatDecimal(c.valor, 0, 'POINT', 0, 'COMMA')}"></td>
+                <td th:text="${c.porcentajeParticipacion} + ' %'"></td><td th:text="${c.estado}"></td>
+                <td th:text="${c.tieneCertificacion} ? 'Sí' : 'No'"></td>
+            </tr>
+            </tbody>
+        </table>
+        <form sec:authorize="hasAuthority('PROVEEDORES_GESTIONAR')" class="bloque"
+              th:action="@{/proveedores/{id}/expediente/contratos(id=${proveedor.idProveedor})}" method="post">
+            <b>Agregar contrato</b><br>
+            <input name="contratante" placeholder="Contratante" required>
+            <label style="font-weight:normal"><input type="checkbox" name="contratantePublico" value="true"> Entidad pública</label>
+            <input name="objeto" placeholder="Objeto del contrato" required style="width:320px"><br>
+            <input type="number" name="valor" placeholder="Valor (COP)" min="1" required>
+            <input type="number" name="porcentajeParticipacion" placeholder="% participación (100)" min="1" max="100">
+            <input name="codigosUnspsc" placeholder="Códigos UNSPSC (76111500,…)">
+            <label>Inicio</label> <input type="date" name="fechaInicio" required>
+            <label>Terminación</label> <input type="date" name="fechaTerminacion">
+            <label style="font-weight:normal"><input type="checkbox" name="tieneCertificacion" value="true"> Tiene certificación</label>
+            <button type="submit">Agregar</button>
+        </form>
+    </div>
+
+    <!-- ===================== SARLAFT ===================== -->
+    <div class="seccion">
+        <h2>Prevención de lavado de activos (SARLAFT)</h2>
+        <p>Estado:
+            <span class="estado" th:classappend="${estadoSarlaft.name() == 'LIMPIO'} ? 'ok' : (${estadoSarlaft.name() == 'BLOQUEADO'} ? 'mal' : 'med')"
+                  th:text="${estadoSarlaft}"></span>
+            <small>(obligatorias: OFAC, ONU, Procuraduría, Contraloría y Policía; vigencia 90 días)</small></p>
+        <div sec:authorize="hasAnyAuthority('SARLAFT_CONSULTAR','AUDITORIA_VER')">
+            <table>
+                <thead><tr><th>Fecha</th><th>Lista</th><th>Consultado</th><th>Resultado</th><th>Responsable</th><th>Observación</th></tr></thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(consultas)}"><td colspan="6">Sin consultas registradas.</td></tr>
+                <tr th:each="c : ${consultas}">
+                    <td th:text="${#temporals.format(c.fechaConsulta, 'dd/MM/yyyy HH:mm')}"></td>
+                    <td th:text="${c.lista.descripcion}"></td>
+                    <td th:text="${c.nombreConsultado} + ' · ' + ${c.documentoConsultado}"></td>
+                    <td th:text="${c.resultado}"></td><td th:text="${c.usuarioResponsable}"></td>
+                    <td th:text="${c.observacion}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <p sec:authorize="!hasAnyAuthority('SARLAFT_CONSULTAR','AUDITORIA_VER')" style="color:#64748B">
+            El detalle de las consultas solo lo ven el oficial de cumplimiento y auditoría.</p>
+        <form sec:authorize="hasAuthority('SARLAFT_CONSULTAR')" class="bloque"
+              th:action="@{/proveedores/{id}/expediente/sarlaft(id=${proveedor.idProveedor})}" method="post">
+            <b>Registrar consulta</b> <small>(las consultas no se editan ni se borran: quedan como evidencia)</small><br>
+            <select name="lista"><option th:each="l : ${listas}" th:value="${l}" th:text="${l.descripcion}"></option></select>
+            <input name="documentoConsultado" placeholder="NIT o cédula consultada" required>
+            <input name="nombreConsultado" placeholder="Nombre consultado" required><br>
+            <select name="resultado"><option th:each="r : ${resultados}" th:value="${r}" th:text="${r}"></option></select>
+            <input name="referencia" placeholder="No. de certificado o referencia">
+            <input name="observacion" placeholder="Observación (obligatoria si hay coincidencia)" style="width:320px">
+            <button type="submit">Registrar</button>
+        </form>
+    </div>
+
+    <!-- ===================== Clasificación ===================== -->
+    <div class="seccion">
+        <h2>Clasificación (CIIU y nicho)</h2>
+        <div th:if="${clasificacion == null}">Aún no está clasificado.</div>
+        <div th:if="${clasificacion != null}" class="bloque">
+            <b>Estado:</b>
+            <span class="estado" th:classappend="${clasificacion.estado.name() == 'AUTOMATICA' or clasificacion.estado.name() == 'MANUAL'} ? 'ok'
+                    : (${clasificacion.estado.name() == 'RECHAZADA'} ? 'mal' : 'med')" th:text="${clasificacion.estado}"></span>
+            · <b>Tipo:</b> <span th:text="${clasificacion.tipoProveedor.descripcion}"></span><br>
+            <b>Nichos:</b> <span th:each="n, it : ${clasificacion.nichos}" th:text="${n.nombre} + (${it.last} ? '' : ', ')"></span>
+            <span th:if="${#sets.isEmpty(clasificacion.nichos)}">ninguno</span>
+            <div th:if="${clasificacion.motivosRevision}" style="color:#92400E;margin-top:6px" th:text="'Motivos de revisión: ' + ${clasificacion.motivosRevision}"></div>
+            <div th:if="${clasificacion.requisitosAdicionales}" style="margin-top:6px" th:text="'Requisitos adicionales por ley: ' + ${clasificacion.requisitosAdicionales}"></div>
+            <div th:if="${clasificacion.justificacion}" style="margin-top:6px"
+                 th:text="'Resuelto por ' + ${clasificacion.resueltoPor} + ': ' + ${clasificacion.justificacion}"></div>
+        </div>
+
+        <form sec:authorize="hasAuthority('PROVEEDORES_GESTIONAR')" class="bloque"
+              th:action="@{/proveedores/{id}/expediente/clasificar(id=${proveedor.idProveedor})}" method="post">
+            <b>Clasificar o reclasificar</b><br>
+            <select name="tipo"><option th:each="t : ${tipos}" th:value="${t}" th:text="${t.descripcion}"></option></select><br>
+            <span th:each="i : ${#numbers.sequence(0, 3)}">
+                <input name="codigo" placeholder="CIIU (4 dígitos)" maxlength="4" style="width:130px">
+                <select name="tipoActividad">
+                    <option value="PRINCIPAL" th:selected="${i == 0}">Principal</option>
+                    <option value="SECUNDARIA" th:selected="${i == 1}">Secundaria</option>
+                    <option value="OTRA" th:selected="${i >= 2}">Otra</option>
+                </select>
+            </span><br>
+            <input name="codigosOficiales" placeholder="CIIU que aparecen en el RUT / Cámara de Comercio (8121, 6201…)" style="width:460px">
+            <button type="submit">Clasificar</button>
+        </form>
+
+        <form sec:authorize="hasAuthority('CLASIFICACION_RESOLVER')"
+              th:if="${clasificacion != null and clasificacion.estado.name() == 'EN_REVISION'}" class="bloque"
+              th:action="@{/proveedores/{id}/expediente/clasificacion/resolver(id=${proveedor.idProveedor})}" method="post">
+            <b>Resolver la excepción</b><br>
+            <select name="nichosAsignados" multiple size="5">
+                <option th:each="n : ${nichos}" th:value="${n.idNicho}" th:text="${n.nombre}"></option>
+            </select>
+            <input name="justificacion" placeholder="Justificación (mínimo 20 caracteres)" minlength="20" required style="width:380px">
+            <button type="submit">Asignar nichos</button>
+        </form>
+        <form sec:authorize="hasAuthority('CLASIFICACION_RESOLVER')"
+              th:if="${clasificacion != null and clasificacion.estado.name() == 'EN_REVISION'}" class="bloque"
+              th:action="@{/proveedores/{id}/expediente/clasificacion/rechazar(id=${proveedor.idProveedor})}" method="post">
+            <input name="justificacion" placeholder="Motivo del rechazo (mínimo 20 caracteres)" minlength="20" required style="width:380px">
+            <button type="submit">Rechazar clasificación</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

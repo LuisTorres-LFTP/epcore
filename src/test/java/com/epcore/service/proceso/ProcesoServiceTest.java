@@ -38,7 +38,8 @@ class ProcesoServiceTest {
     private final ProveedorDocumentoService documentos = mock(ProveedorDocumentoService.class);
 
     private final ProcesoService servicio = new ProcesoService(procesos, ofertas, adendas, proveedores,
-            new ReglasPorModalidad(), new EvaluadorOfertas(), financiera, experiencia, sarlaft, documentos, RELOJ);
+            new ReglasPorModalidad(), new EvaluadorOfertas(), financiera, experiencia, sarlaft, documentos, RELOJ,
+            mock(com.epcore.service.notificacion.NotificacionService.class));
 
     private final Map<Long, Proceso> bd = new HashMap<>();
     private final List<Oferta> ofertasBd = new ArrayList<>();

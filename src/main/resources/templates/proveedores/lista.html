@@ -198,6 +198,11 @@
                             Documentos
                         </a>
 
+                        <a th:href="@{/proveedores/{idProveedor}/expediente(idProveedor=${proveedor.idProveedor})}"
+                           class="accion-btn accion-documentos">
+                            Expediente
+                        </a>
+
                         <!-- ELIMINAR -->
                         <span sec:authorize="hasAuthority('PROVEEDORES_ELIMINAR')">
 

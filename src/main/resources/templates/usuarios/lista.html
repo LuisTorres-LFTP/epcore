@@ -17,6 +17,10 @@
         &nbsp; | &nbsp;
         <a th:href="@{/roles}" class="link">Roles y permisos</a>
     </span>
+    <span sec:authorize="hasAuthority('CATALOGOS_GESTIONAR')">
+        &nbsp; | &nbsp;
+        <a th:href="@{/catalogos}" class="link">Catálogos CIIU y listas</a>
+    </span>
     &nbsp; | &nbsp;
     <a th:href="@{/proveedores}" class="link">Ver proveedores</a>
     &nbsp; | &nbsp;

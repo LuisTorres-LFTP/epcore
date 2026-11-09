@@ -20,7 +20,7 @@ import static org.mockito.Mockito.*;
 class AprobacionDocumentosTest {
 
     private final ProveedorDocumentoRepository repo = mock(ProveedorDocumentoRepository.class);
-    private final DocumentoAprobacionService servicio = new DocumentoAprobacionService(repo);
+    private final DocumentoAprobacionService servicio = new DocumentoAprobacionService(repo, mock(com.epcore.service.notificacion.NotificacionService.class));
     private final ValidadorDocumentoPdf validador = new ValidadorDocumentoPdf();
 
     private ProveedorDocumento doc(String estado) {

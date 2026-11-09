@@ -98,6 +98,11 @@
 			<artifactId>spring-security-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<!-- Correo automático (solo se activa si se configura spring.mail.host) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
+		</dependency>
 		<!-- Lectura de PDF para validar automáticamente NIT y fechas de los documentos -->
 		<dependency>
 			<groupId>org.apache.pdfbox</groupId>

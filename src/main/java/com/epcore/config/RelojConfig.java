@@ -8,6 +8,7 @@ import java.time.ZoneId;
 
 /** Reloj del sistema en hora de Colombia; las pruebas pueden reemplazarlo por uno fijo. */
 @Configuration
+@org.springframework.scheduling.annotation.EnableScheduling
 public class RelojConfig {
 
     @Bean

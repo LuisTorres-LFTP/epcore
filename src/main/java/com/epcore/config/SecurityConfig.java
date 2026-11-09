@@ -104,6 +104,7 @@ public class SecurityConfig {
                                 Permiso.PROCESOS_EVALUAR_TECNICO.name(), Permiso.PROCESOS_ADJUDICAR.name(), Permiso.AUDITORIA_VER.name())
                         .requestMatchers("/usuarios/**").hasAuthority(Permiso.USUARIOS_GESTIONAR.name())
                         .requestMatchers("/roles/**").hasAuthority(Permiso.ROLES_GESTIONAR.name())
+                        .requestMatchers("/catalogos/**").hasAuthority(Permiso.CATALOGOS_GESTIONAR.name())
                         .requestMatchers("/criterios/nuevo", "/criterios/guardar", "/criterios/editar/**", "/criterios/eliminar/**")
                         .hasAuthority(Permiso.CATALOGOS_GESTIONAR.name())
                         .requestMatchers("/criterios/**").hasAnyAuthority(Permiso.EVALUACIONES_VER.name(), Permiso.CATALOGOS_GESTIONAR.name())
@@ -111,6 +112,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/proveedores/*/documentos/*/aprobar", "/proveedores/*/documentos/*/rechazar")
                         .hasAnyAuthority(Permiso.DOCUMENTOS_APROBAR_NIVEL_1.name(), Permiso.DOCUMENTOS_APROBAR_NIVEL_2.name())
                         .requestMatchers(HttpMethod.POST, "/proveedores/*/documentos/**").hasAuthority(Permiso.DOCUMENTOS_CARGAR.name())
+                        // Expediente: financiera, experiencia y clasificación las gestiona compras; SARLAFT, cumplimiento.
+                        .requestMatchers(HttpMethod.POST, "/proveedores/*/expediente/sarlaft").hasAuthority(Permiso.SARLAFT_CONSULTAR.name())
+                        .requestMatchers(HttpMethod.POST, "/proveedores/*/expediente/clasificacion/**").hasAuthority(Permiso.CLASIFICACION_RESOLVER.name())
+                        .requestMatchers(HttpMethod.POST, "/proveedores/*/expediente/**").hasAuthority(Permiso.PROVEEDORES_GESTIONAR.name())
                         .requestMatchers("/proveedores/*/documentos/nuevo").hasAuthority(Permiso.DOCUMENTOS_CARGAR.name())
                         .requestMatchers("/proveedores/eliminar/**").hasAuthority(Permiso.PROVEEDORES_ELIMINAR.name())
                         .requestMatchers("/proveedores/nuevo", "/proveedores/guardar", "/proveedores/editar/**")

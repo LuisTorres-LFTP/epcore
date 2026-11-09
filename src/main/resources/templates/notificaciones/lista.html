@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Notificaciones - EPCORE</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+<div class="container">
+    <h1>Mis notificaciones</h1>
+    <p class="subtitle"><span th:text="${noLeidas}"></span> sin leer. Los avisos importantes también llegan por correo con la marca EpCore.</p>
+
+    <form th:action="@{/notificaciones/leidas}" method="post" style="display:inline">
+        <button type="submit">Marcar todas como leídas</button>
+    </form>
+    &nbsp; <a href="javascript:history.back()" class="link">Volver</a>
+
+    <table>
+        <thead><tr><th>Fecha</th><th>Aviso</th><th></th></tr></thead>
+        <tbody>
+        <tr th:if="${#lists.isEmpty(notificaciones)}"><td colspan="3">No tiene notificaciones.</td></tr>
+        <tr th:each="n : ${notificaciones}" th:style="${n.leida} ? '' : 'background:#F5F9FF'">
+            <td th:text="${#temporals.format(n.fecha, 'dd/MM/yyyy HH:mm')}"></td>
+            <td><b th:text="${n.titulo}"></b><br><span th:text="${n.mensaje}"></span></td>
+            <td><a th:if="${n.enlace}" th:href="@{${n.enlace}}" class="link">Ver</a></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>
