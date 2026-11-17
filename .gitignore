@@ -42,3 +42,6 @@ build/
 
 # Configuración local de clientes (contiene claves)
 config/clientes.properties
+
+# Documentos cargados por los proveedores (datos reales, nunca a Git)
+uploads/
