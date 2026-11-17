@@ -1,5 +1,6 @@
 package com.epcore.config;
 
+import com.epcore.controller.InicioController;
 import com.epcore.entity.Permiso;
 import com.epcore.security.CustomUserDetailsService;
 import com.epcore.security.LoginAttemptService;
@@ -19,7 +20,9 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandlerImpl;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.csrf.CsrfException;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
@@ -87,6 +90,9 @@ public class SecurityConfig {
                         .sessionFixation(fixation -> fixation.changeSessionId()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/error").permitAll()
+                        // Login con cualquier aviso (?error, ?bloqueado, ?expirada, ?logout); formLogin().permitAll()
+                        // solo permite la URL exacta sin parámetros.
+                        .requestMatchers("/login").permitAll()
                         // Portal de proveedores: registro público; el resto solo con permiso de portal.
                         .requestMatchers("/registro").permitAll()
                         .requestMatchers("/portal/**").hasAuthority(Permiso.PORTAL_PROVEEDOR.name())
@@ -127,14 +133,10 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
+                        .loginPage("/login")
                         .successHandler((request, response, authentication) -> {
                             loginAttemptService.registrarExito(authentication.getName());
-                            boolean veEvaluaciones = authentication.getAuthorities().stream()
-                                    .anyMatch(a -> Permiso.EVALUACIONES_VER.name().equals(a.getAuthority()));
-                            boolean esProveedor = authentication.getAuthorities().stream()
-                                    .anyMatch(a -> Permiso.PORTAL_PROVEEDOR.name().equals(a.getAuthority()));
-                            response.sendRedirect(request.getContextPath()
-                                    + (esProveedor ? "/portal" : veEvaluaciones ? "/evaluaciones" : "/proveedores"));
+                            response.sendRedirect(request.getContextPath() + InicioController.paginaInicial(authentication));
                         })
                         .failureHandler((request, response, exception) -> {
                             if (exception instanceof BadCredentialsException) {
@@ -148,7 +150,16 @@ public class SecurityConfig {
                 .logout(logout -> logout
                         .logoutSuccessUrl("/login?logout")
                         .permitAll()
-                );
+                )
+                .exceptionHandling(ex -> ex.accessDeniedHandler((request, response, accessDenied) -> {
+                    // Un formulario de login abierto desde antes trae un token CSRF vencido:
+                    // se recarga el login con un aviso en lugar de mostrar "acceso no permitido".
+                    if (accessDenied instanceof CsrfException && "/login".equals(request.getServletPath())) {
+                        response.sendRedirect(request.getContextPath() + "/login?expirada");
+                        return;
+                    }
+                    new AccessDeniedHandlerImpl().handle(request, response, accessDenied);
+                }));
 
         return http.build();
     }
