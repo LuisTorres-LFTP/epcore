@@ -25,6 +25,11 @@
     <a th:href="@{/usuarios}" class="link">Ver usuarios</a>
     </span>
 
+    <p th:if="${sumaPesos == sumaPesosRequerida}" style="color:#166534;font-weight:600"
+       th:text="'Suma de pesos de los criterios activos: ' + ${sumaPesos} + '%'"></p>
+    <p th:unless="${sumaPesos == sumaPesosRequerida}" style="color:#9F1239;font-weight:600"
+       th:text="'Suma de pesos de los criterios activos: ' + ${sumaPesos} + '%. Debe ser ' + ${sumaPesosRequerida} + '% para poder registrar evaluaciones.'"></p>
+
     <table>
         <thead>
         <tr>

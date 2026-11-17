@@ -18,6 +18,8 @@ public class CriterioWebController {
     @GetMapping("/criterios")
     public String listarCriterios(Model model) {
         model.addAttribute("criterios", criterioService.listarTodos());
+        model.addAttribute("sumaPesos", criterioService.sumaPesosActivos());
+        model.addAttribute("sumaPesosRequerida", CriterioService.SUMA_PESOS_REQUERIDA);
         return "proveedores/criterios/lista";
     }
 

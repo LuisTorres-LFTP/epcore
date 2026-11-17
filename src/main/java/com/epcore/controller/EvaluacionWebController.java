@@ -70,7 +70,12 @@ public class EvaluacionWebController {
     public String mostrarFormularioNueva(Model model) {
         model.addAttribute("evaluacion", new Evaluacion());
         model.addAttribute("proveedores", proveedorService.listarProveedores());
-        model.addAttribute("criterios", criterioService.listarTodos());
+        model.addAttribute("criterios", criterioService.listarActivos());
+
+        int sumaPesos = criterioService.sumaPesosActivos();
+        if (sumaPesos != CriterioService.SUMA_PESOS_REQUERIDA) {
+            model.addAttribute("avisoPesos", mensajeSumaPesos(sumaPesos));
+        }
 
         return "evaluaciones/formulario";
     }
@@ -90,6 +95,10 @@ public class EvaluacionWebController {
             if (evaluacion.getFechaEvaluacion() == null) {
                 throw new IllegalArgumentException("La fecha de evaluación es obligatoria.");
             }
+            int sumaPesos = criterioService.sumaPesosActivos();
+            if (sumaPesos != CriterioService.SUMA_PESOS_REQUERIDA) {
+                throw new IllegalArgumentException(mensajeSumaPesos(sumaPesos));
+            }
 
             for (Map.Entry<String, String> entry : parametros.entrySet()) {
                 if (entry.getKey().startsWith("calificacion_")) {
@@ -99,6 +108,10 @@ public class EvaluacionWebController {
                         Long idCriterio = Long.parseLong(entry.getKey().replace("calificacion_", ""));
                         Criterio criterio = criterioService.buscarPorId(idCriterio)
                                 .orElseThrow(() -> new IllegalArgumentException("Criterio no encontrado"));
+                        if (!Boolean.TRUE.equals(criterio.getActivo())) {
+                            throw new IllegalArgumentException(
+                                    "El criterio '" + criterio.getNombreCriterio() + "' está inactivo y no se puede calificar.");
+                        }
 
                         double calificacion;
                         try {
@@ -114,6 +127,9 @@ public class EvaluacionWebController {
                         calificaciones.put(criterio, calificacion);
                     }
                 }
+            }
+            if (calificaciones.size() != criterioService.listarActivos().size()) {
+                throw new IllegalArgumentException("Debe calificar todos los criterios activos.");
             }
         } catch (IllegalArgumentException e) {
             flash.addFlashAttribute("mensajeError", e.getMessage());
@@ -164,5 +180,10 @@ public class EvaluacionWebController {
         model.addAttribute("detalles", evaluacionDetalleService.listarPorEvaluacion(id));
 
         return "evaluaciones/detalle";
+    }
+
+    private String mensajeSumaPesos(int sumaPesos) {
+        return "Los pesos de los criterios activos suman " + sumaPesos + "% y deben sumar "
+                + CriterioService.SUMA_PESOS_REQUERIDA + "%. Ajuste los criterios antes de registrar evaluaciones.";
     }
 }

@@ -20,6 +20,7 @@
     </p>
 
     <p th:if="${mensajeError}" th:text="${mensajeError}" style="color:#9F1239;font-weight:600"></p>
+    <p th:if="${avisoPesos != null and avisoPesos != mensajeError}" th:text="${avisoPesos}" style="color:#9F1239;font-weight:600"></p>
 
     <form th:action="@{/evaluaciones/guardar}"
           th:object="${evaluacion}"
@@ -124,7 +125,7 @@
         <br>
 
         <!-- BOTONES -->
-        <button type="submit">
+        <button type="submit" th:disabled="${avisoPesos != null}">
             Guardar evaluación
         </button>
 

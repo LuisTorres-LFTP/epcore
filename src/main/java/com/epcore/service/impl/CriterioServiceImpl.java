@@ -23,6 +23,18 @@ public class CriterioServiceImpl implements CriterioService {
     }
 
     @Override
+    public List<Criterio> listarActivos() {
+        return criterioRepository.findByActivoTrue();
+    }
+
+    @Override
+    public int sumaPesosActivos() {
+        return listarActivos().stream()
+                .mapToInt(Criterio::getPeso)
+                .sum();
+    }
+
+    @Override
     public Optional<Criterio> buscarPorId(Long id) {
         return criterioRepository.findById(id);
     }
