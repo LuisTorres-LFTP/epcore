@@ -43,8 +43,15 @@ public class UsuarioWebController {
     }
 
     @PostMapping("/usuarios/guardar")
-    public String guardarUsuario(@ModelAttribute Usuario usuario) {
-        usuarioService.guardar(usuario);
+    public String guardarUsuario(@ModelAttribute Usuario usuario, Model model) {
+        try {
+            usuarioService.guardar(usuario);
+        } catch (IllegalArgumentException e) {
+            // Se vuelve al formulario con lo escrito, pero nunca se devuelve la contraseña.
+            usuario.setPassword(null);
+            model.addAttribute("mensajeError", e.getMessage());
+            return "usuarios/formulario";
+        }
         return "redirect:/usuarios";
     }
 

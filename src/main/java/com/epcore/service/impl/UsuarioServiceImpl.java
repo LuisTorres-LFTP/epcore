@@ -7,10 +7,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 @Service
 public class UsuarioServiceImpl implements UsuarioService {
+
+    private static final Pattern CORREO = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
 
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
@@ -37,6 +41,8 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     @Override
     public Usuario guardar(Usuario usuario) {
+        validarDatos(usuario);
+
         // Un rol personalizado exige elegir el perfil; los roles base no lo usan.
         if (usuario.getRol() == com.epcore.entity.Rol.PERSONALIZADO) {
             if (usuario.getPerfil() == null || !Boolean.TRUE.equals(usuario.getPerfil().getActivo())) {
@@ -68,6 +74,29 @@ public class UsuarioServiceImpl implements UsuarioService {
         }
 
         return usuarioRepository.save(usuario);
+    }
+
+    private void validarDatos(Usuario usuario) {
+        if (usuario.getNombre() == null || usuario.getNombre().isBlank()) {
+            throw new IllegalArgumentException("El nombre es obligatorio.");
+        }
+        if (usuario.getCorreo() == null || !CORREO.matcher(usuario.getCorreo().trim()).matches()) {
+            throw new IllegalArgumentException("Escriba un correo válido.");
+        }
+        usuario.setCorreo(usuario.getCorreo().trim().toLowerCase(Locale.ROOT));
+        usuarioRepository.findByCorreo(usuario.getCorreo())
+                .filter(existente -> !existente.getIdUsuario().equals(usuario.getIdUsuario()))
+                .ifPresent(existente -> {
+                    throw new IllegalArgumentException("Ya existe un usuario con el correo " + usuario.getCorreo() + ".");
+                });
+        if (usuario.getRol() == null) {
+            throw new IllegalArgumentException("Seleccione el rol del usuario.");
+        }
+        String clave = usuario.getPassword();
+        boolean claveNueva = clave != null && !clave.isBlank() && !isBcryptHash(clave);
+        if (claveNueva && (clave.length() < 8 || !clave.matches(".*[A-Za-z].*") || !clave.matches(".*\\d.*"))) {
+            throw new IllegalArgumentException("La contraseña debe tener mínimo 8 caracteres, con letras y números.");
+        }
     }
 
     @Override

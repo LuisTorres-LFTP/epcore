@@ -15,6 +15,8 @@
 
     <p class="subtitle">Gestión de usuarios y roles del sistema.</p>
 
+    <p th:if="${mensajeError}" th:text="${mensajeError}" style="color:#9F1239;font-weight:600"></p>
+
     <form th:action="@{/usuarios/guardar}" th:object="${usuario}" method="post">
 
         <input type="hidden" th:field="*{idUsuario}">
