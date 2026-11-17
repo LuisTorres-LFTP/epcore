@@ -29,6 +29,12 @@ public class CriterioServiceImpl implements CriterioService {
 
     @Override
     public Criterio guardar(Criterio criterio) {
+        if (criterio.getNombreCriterio() == null || criterio.getNombreCriterio().isBlank()) {
+            throw new IllegalArgumentException("El nombre del criterio es obligatorio.");
+        }
+        if (criterio.getPeso() == null || criterio.getPeso() < 1 || criterio.getPeso() > 100) {
+            throw new IllegalArgumentException("El peso debe estar entre 1 y 100.");
+        }
         return criterioRepository.save(criterio);
     }
 

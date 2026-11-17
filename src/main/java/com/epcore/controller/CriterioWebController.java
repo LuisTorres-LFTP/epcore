@@ -28,8 +28,13 @@ public class CriterioWebController {
     }
 
     @PostMapping("/criterios/guardar")
-    public String guardarCriterio(@ModelAttribute Criterio criterio) {
-        criterioService.guardar(criterio);
+    public String guardarCriterio(@ModelAttribute Criterio criterio, Model model) {
+        try {
+            criterioService.guardar(criterio);
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("mensajeError", e.getMessage());
+            return "proveedores/criterios/formulario";
+        }
         return "redirect:/criterios";
     }
 

@@ -15,6 +15,8 @@
 
     <p class="subtitle">Formulario de registro inicial para evaluación de proveedores.</p>
 
+    <p th:if="${mensajeError}" th:text="${mensajeError}" style="color:#9F1239;font-weight:600"></p>
+
     <form th:action="@{/proveedores/guardar}"
           th:object="${proveedor}"
           method="post">

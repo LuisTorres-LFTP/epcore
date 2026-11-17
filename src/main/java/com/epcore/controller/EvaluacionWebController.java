@@ -10,7 +10,9 @@ import com.epcore.service.ProveedorService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Controller
@@ -76,38 +78,68 @@ public class EvaluacionWebController {
     @PostMapping("/evaluaciones/guardar")
     public String guardarEvaluacion(
             @ModelAttribute Evaluacion evaluacion,
-            @RequestParam Map<String, String> parametros) {
+            @RequestParam Map<String, String> parametros,
+            RedirectAttributes flash) {
+
+        // Se validan todas las calificaciones antes de guardar para no dejar evaluaciones incompletas.
+        Map<Criterio, Double> calificaciones = new LinkedHashMap<>();
+        try {
+            if (evaluacion.getProveedor() == null || evaluacion.getProveedor().getIdProveedor() == null) {
+                throw new IllegalArgumentException("Seleccione el proveedor a evaluar.");
+            }
+            if (evaluacion.getFechaEvaluacion() == null) {
+                throw new IllegalArgumentException("La fecha de evaluación es obligatoria.");
+            }
+
+            for (Map.Entry<String, String> entry : parametros.entrySet()) {
+                if (entry.getKey().startsWith("calificacion_")) {
+                    String valorCalificacion = entry.getValue();
+
+                    if (valorCalificacion != null && !valorCalificacion.isBlank()) {
+                        Long idCriterio = Long.parseLong(entry.getKey().replace("calificacion_", ""));
+                        Criterio criterio = criterioService.buscarPorId(idCriterio)
+                                .orElseThrow(() -> new IllegalArgumentException("Criterio no encontrado"));
+
+                        double calificacion;
+                        try {
+                            calificacion = Double.parseDouble(valorCalificacion);
+                        } catch (NumberFormatException e) {
+                            throw new IllegalArgumentException(
+                                    "La calificación de '" + criterio.getNombreCriterio() + "' debe ser un número.");
+                        }
+                        if (calificacion < 0 || calificacion > 100) {
+                            throw new IllegalArgumentException(
+                                    "La calificación de '" + criterio.getNombreCriterio() + "' debe estar entre 0 y 100.");
+                        }
+                        calificaciones.put(criterio, calificacion);
+                    }
+                }
+            }
+        } catch (IllegalArgumentException e) {
+            flash.addFlashAttribute("mensajeError", e.getMessage());
+            return "redirect:/evaluaciones/nueva";
+        }
 
         evaluacion.setResultadoFinal(0.0);
         Evaluacion evaluacionGuardada = evaluacionService.guardar(evaluacion);
 
         double resultadoFinal = 0.0;
 
-        for (Map.Entry<String, String> entry : parametros.entrySet()) {
-            if (entry.getKey().startsWith("calificacion_")) {
-                String valorCalificacion = entry.getValue();
+        for (Map.Entry<Criterio, Double> entry : calificaciones.entrySet()) {
+            Criterio criterio = entry.getKey();
+            Double calificacion = entry.getValue();
+            Double resultadoPonderado = (calificacion * criterio.getPeso()) / 100;
 
-                if (valorCalificacion != null && !valorCalificacion.isBlank()) {
-                    Long idCriterio = Long.parseLong(entry.getKey().replace("calificacion_", ""));
-                    Double calificacion = Double.parseDouble(valorCalificacion);
+            EvaluacionDetalle detalle = EvaluacionDetalle.builder()
+                    .evaluacion(evaluacionGuardada)
+                    .criterio(criterio)
+                    .calificacion(calificacion)
+                    .peso(criterio.getPeso())
+                    .resultadoPonderado(resultadoPonderado)
+                    .build();
 
-                    Criterio criterio = criterioService.buscarPorId(idCriterio)
-                            .orElseThrow(() -> new IllegalArgumentException("Criterio no encontrado"));
-
-                    Double resultadoPonderado = (calificacion * criterio.getPeso()) / 100;
-
-                    EvaluacionDetalle detalle = EvaluacionDetalle.builder()
-                            .evaluacion(evaluacionGuardada)
-                            .criterio(criterio)
-                            .calificacion(calificacion)
-                            .peso(criterio.getPeso())
-                            .resultadoPonderado(resultadoPonderado)
-                            .build();
-
-                    evaluacionDetalleService.guardar(detalle);
-                    resultadoFinal += resultadoPonderado;
-                }
-            }
+            evaluacionDetalleService.guardar(detalle);
+            resultadoFinal += resultadoPonderado;
         }
 
         evaluacionGuardada.setResultadoFinal(resultadoFinal);

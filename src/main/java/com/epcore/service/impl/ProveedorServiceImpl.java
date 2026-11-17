@@ -20,6 +20,16 @@ public class ProveedorServiceImpl implements ProveedorService {
     @Override
     public Proveedor guardarProveedor(Proveedor proveedor) {
 
+        validarCamposObligatorios(proveedor);
+        proveedor.setNit(proveedor.getNit().trim());
+
+        proveedorRepository.findByNit(proveedor.getNit())
+                .filter(existente -> !existente.getIdProveedor().equals(proveedor.getIdProveedor()))
+                .ifPresent(existente -> {
+                    throw new IllegalArgumentException(
+                            "Ya existe un proveedor registrado con el NIT " + proveedor.getNit() + ".");
+                });
+
         if (proveedor.getEstado() == null || proveedor.getEstado().isBlank()) {
             proveedor.setEstado("ACTIVO");
         }
@@ -29,6 +39,25 @@ public class ProveedorServiceImpl implements ProveedorService {
         }
 
         return proveedorRepository.save(proveedor);
+    }
+
+    private void validarCamposObligatorios(Proveedor proveedor) {
+        if (esVacio(proveedor.getTipoPersona())) {
+            throw new IllegalArgumentException("Seleccione el tipo de persona.");
+        }
+        if (esVacio(proveedor.getNit())) {
+            throw new IllegalArgumentException("El NIT es obligatorio.");
+        }
+        if (esVacio(proveedor.getRazonSocial())) {
+            throw new IllegalArgumentException("La razón social es obligatoria.");
+        }
+        if (esVacio(proveedor.getCorreo())) {
+            throw new IllegalArgumentException("El correo es obligatorio.");
+        }
+    }
+
+    private boolean esVacio(String valor) {
+        return valor == null || valor.isBlank();
     }
 
     @Override

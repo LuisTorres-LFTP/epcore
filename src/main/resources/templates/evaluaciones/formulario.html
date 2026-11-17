@@ -19,6 +19,8 @@
         Gestión de evaluaciones de proveedores.
     </p>
 
+    <p th:if="${mensajeError}" th:text="${mensajeError}" style="color:#9F1239;font-weight:600"></p>
+
     <form th:action="@{/evaluaciones/guardar}"
           th:object="${evaluacion}"
           method="post">

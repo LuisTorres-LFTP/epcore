@@ -28,8 +28,13 @@ public class ProveedorWebController {
     }
 
     @PostMapping("/proveedores/guardar")
-    public String guardarProveedor(@ModelAttribute Proveedor proveedor) {
-        proveedorService.guardarProveedor(proveedor);
+    public String guardarProveedor(@ModelAttribute Proveedor proveedor, Model model) {
+        try {
+            proveedorService.guardarProveedor(proveedor);
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("mensajeError", e.getMessage());
+            return "proveedores/formulario";
+        }
         return "redirect:/proveedores";
     }
 

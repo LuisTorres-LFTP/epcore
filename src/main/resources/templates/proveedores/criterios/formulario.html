@@ -19,6 +19,8 @@
         Gestión de criterios de evaluación para proveedores.
     </p>
 
+    <p th:if="${mensajeError}" th:text="${mensajeError}" style="color:#9F1239;font-weight:600"></p>
+
     <form th:action="@{/criterios/guardar}"
           th:object="${criterio}"
           method="post">
